@@ -238,16 +238,43 @@ jobs:
             [ ! -z "$DOWNLOADED_FILE" ] && echo "✅ パターン1で発見: $DOWNLOADED_FILE"
           fi
           
+          # パターン1.5: Claude Codeが指定した正確なファイル名
+          if [ -z "$DOWNLOADED_FILE" ] && [ ! -z "$CLAUDE_FILE" ]; then
+            BASENAME_FILE=$(basename "$CLAUDE_FILE")
+            if [ -f "$BASENAME_FILE" ]; then
+              DOWNLOADED_FILE="$BASENAME_FILE"
+              echo "✅ パターン1.5で発見（正確なファイル名）: $DOWNLOADED_FILE"
+            fi
+          fi
+          
           # パターン2: imageで始まるファイル
           if [ -z "$DOWNLOADED_FILE" ]; then
             DOWNLOADED_FILE=$(find . -name "image*.png" -o -name "image*.jpg" -o -name "image*.jpeg" -o -name "image*.webp" -type f 2>/dev/null | head -1)
             [ ! -z "$DOWNLOADED_FILE" ] && echo "✅ パターン2で発見: $DOWNLOADED_FILE"
           fi
           
-          # パターン3: 最近作成された画像ファイル
+          # パターン3: 最近作成された画像ファイル（5分以内）
           if [ -z "$DOWNLOADED_FILE" ]; then
             DOWNLOADED_FILE=$(find . -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" -type f -mmin -5 2>/dev/null | head -1)
             [ ! -z "$DOWNLOADED_FILE" ] && echo "✅ パターン3で発見: $DOWNLOADED_FILE"
+          fi
+          
+          # パターン3.5: より広範囲のファイルシステム検索
+          if [ -z "$DOWNLOADED_FILE" ]; then
+            echo "🔍 より広範囲でファイル検索中..."
+            FOUND_FILES=$(find /home -name "morning-image.png" -o -name "image.png" -type f 2>/dev/null | head -3)
+            if [ ! -z "$FOUND_FILES" ]; then
+              echo "✅ システム全体で発見:"
+              echo "$FOUND_FILES"
+              DOWNLOADED_FILE=$(echo "$FOUND_FILES" | head -1)
+              echo "✅ パターン3.5で発見: $DOWNLOADED_FILE"
+              # ワーキングディレクトリにコピー
+              if cp "$DOWNLOADED_FILE" "./morning-image.png" 2>/dev/null || sudo cp "$DOWNLOADED_FILE" "./morning-image.png" 2>/dev/null; then
+                sudo chown runner:docker "./morning-image.png" 2>/dev/null || true
+                DOWNLOADED_FILE="./morning-image.png"
+                echo "✅ ワーキングディレクトリにコピー完了: $DOWNLOADED_FILE"
+              fi
+            fi
           fi
           
           # パターン4: 任意の画像ファイル
