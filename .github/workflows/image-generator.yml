@@ -70,21 +70,36 @@ jobs:
           fi
           echo "✅ scene.ymlファイルを確認しました"
           
-          # シンプルな画像生成プロンプト
-          PROMPT="yml/scene.ymlの設定でアニメ風画像を生成して。ツインテール女子高生とセーラー服、三毛猫と一緒。楽しいシチュエーションで。アスペクト比は正方形。ファイル名: morning-image.png"
+          # scene.ymlからプロンプト構築
+          if [ -f "yml/scene.yml" ]; then
+            SCENE_CONTENT=$(cat yml/scene.yml)
+            echo "📝 scene.yml内容を読み込みました"
+          else
+            echo "::error::scene.ymlが見つかりません"
+            exit 1
+          fi
+          
+          # RADIO-workflowスタイルのプロンプト構築
+          FULL_PROMPT="画像を生成してください: scene.ymlの設定に基づいて、ツインテール女子高生（セーラー服）と三毛猫が一緒にいる楽しいシチュエーションのアニメ風イラストを生成してください。設定: アスペクト比1:1(square), 保存場所は現在のワーキングディレクトリ $(pwd), ファイル名はmorning-image.png, Qwen-Imageツールを使って画像生成を完了し、必ずmorning-image.pngという名前で保存してください。/rootディレクトリではなく、現在のディレクトリに保存することが重要です。"
           
           echo "🤖 Claude Code SDK実行開始"
           
-          # Claude Code SDKの実行
+          # Claude Code SDKの実行（RADIO-workflowスタイル）
+          echo "🚀 Starting Morning Image Generation..."
+          echo "📝 Prompt length: ${#FULL_PROMPT}"
+          echo "📋 Environment Check:"
+          echo "Working directory: $(pwd)"
+          echo "QWEN_IMAGE URL configured: Yes"
+          
           echo "🎯 Claude Code SDK実行中（180秒タイムアウト）..."
           IMAGE_RESULT=$(timeout 180 npx @anthropic-ai/claude-code \
             --mcp-config="$(pwd)/mcp-config.json" \
             --allowedTools "Read,mcp__t2i-kamui-qwen-image,Bash" \
-            --max-turns 20 \
+            --max-turns 12 \
             --permission-mode "bypassPermissions" \
             --print \
             --verbose \
-            "$PROMPT" 2>&1) || {
+            "$FULL_PROMPT" 2>&1) || {
                 CLAUDE_EXIT_CODE=$?
                 echo "::error::❌ Claude Code実行失敗 (exit code: $CLAUDE_EXIT_CODE)"
                 if [ $CLAUDE_EXIT_CODE -eq 124 ]; then
