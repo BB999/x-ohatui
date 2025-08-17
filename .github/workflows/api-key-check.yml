@@ -45,21 +45,22 @@ jobs:
       env:
         QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
       run: |
-        # 簡単なAPI接続テスト（Kamui Code MCP）
-        response=$(curl -s -w "%{http_code}" -X POST \
-          -H "Authorization: Bearer $QWEN_IMAGE" \
-          -H "Content-Type: application/json" \
-          -d '{"prompt":"test","image_size":"square"}' \
-          -o /dev/null \
-          https://kamui-code.ai/t2i/fal/qwen-image)
-        
-        if [ "$response" = "200" ] || [ "$response" = "201" ]; then
-          echo "✅ QWEN Image API connection successful"
-        elif [ "$response" = "401" ] || [ "$response" = "403" ]; then
-          echo "❌ QWEN Image API authentication failed (HTTP $response)"
-          exit 1
+        # Kamui Code MCP接続テスト
+        if [[ "$QWEN_IMAGE" == https://kamui-code.ai* ]]; then
+          echo "✅ QWEN_IMAGE URL format is correct for Kamui Code MCP"
+          echo "URL: $QWEN_IMAGE"
+          
+          # 簡単な接続テスト
+          response=$(curl -s -w "%{http_code}" -X GET -o /dev/null "$QWEN_IMAGE")
+          
+          if [ "$response" = "200" ] || [ "$response" = "405" ]; then
+            echo "✅ Kamui Code MCP endpoint is accessible"
+          else
+            echo "⚠️ Kamui Code MCP returned HTTP $response"
+          fi
         else
-          echo "⚠️ QWEN Image API returned HTTP $response (may be rate limited or service issue)"
+          echo "❌ QWEN_IMAGE should be Kamui Code MCP URL, got: ${QWEN_IMAGE:0:20}..."
+          exit 1
         fi
         
     - name: Summary
