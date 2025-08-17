@@ -5,15 +5,15 @@ on:
 
 jobs:
   check-api-keys:
-    uses: ./.github/workflows/modules/api-key-check.yml
+    uses: ./.github/workflows/api-key-check.yml
     
   generate-text:
     needs: check-api-keys
-    uses: ./.github/workflows/modules/text-generator.yml
+    uses: ./.github/workflows/text-generator.yml
     
   generate-image:
     needs: check-api-keys
-    uses: ./.github/workflows/modules/image-generator.yml
+    uses: ./.github/workflows/image-generator.yml
     
   summary:
     needs: [generate-text, generate-image]
