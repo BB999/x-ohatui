@@ -79,8 +79,8 @@ jobs:
             exit 1
           fi
           
-          # 動的シチュエーション生成プロンプト
-          FULL_PROMPT="yml/scene.ymlの設定を読んで理解してください。その上で、毎回異なる創造的なシチュエーションを考えて画像を生成してください。シチュエーション例：教室で勉強/屋上で弁当/公園で散歩/図書館で読書/海辺で遊ぶ/桜の下でピクニック/夏祭りで屋台巡り/雪景色で雪だるま作り等。それぞれのシチュエーションに適した表情・ポーズ・背景を選んでください。キャラクター：ツインテール女子高生（セーラー服）と三毛猫。スタイル：アニメ/マンガ風。アスペクト比1:1、ファイル名morning-image.png、Qwen-Imageツールで生成保存してください。"
+          # 動的シチュエーション生成プロンプト（ファイル保存指示を強化）
+          FULL_PROMPT="yml/scene.ymlの設定を読んで理解してください。その上で、毎回異なる創造的なシチュエーションを考えて画像を生成してください。シチュエーション例：教室で勉強/屋上で弁当/公園で散歩/図書館で読書/海辺で遊ぶ/桜の下でピクニック/夏祭りで屋台巡り/雪景色で雪だるま作り等。それぞれのシチュエーションに適した表情・ポーズ・背景を選んでください。キャラクター：ツインテール女子高生（セーラー服）と三毛猫。スタイル：アニメ/マンガ風。アスペクト比1:1。**重要**: Qwen-Imageツールで画像生成後、必ずrequest_idから画像をダウンロードしてmorning-image.pngというファイル名で現在のディレクトリに保存してください。ファイル保存まで必ず完了させてください。"
           
           echo "🤖 Claude Code SDK実行開始"
           
@@ -120,6 +120,23 @@ jobs:
           
           # 結果からURLまたはファイル名を抽出
           IMAGE_URL=$(echo "$IMAGE_RESULT" | grep -oP '(https://|gs://)[^\s]+\.(png|jpg|jpeg|webp)' | head -1)
+          
+          # request_idの抽出
+          REQUEST_ID=$(echo "$IMAGE_RESULT" | grep -oP 'request_id\s*`?([a-f0-9-]+)`?' | sed 's/.*`\?\([a-f0-9-]\+\)`\?.*/\1/' | head -1)
+          if [ ! -z "$REQUEST_ID" ]; then
+            echo "🔍 Request ID検出: $REQUEST_ID"
+            # request_idがある場合は、Claude Codeに画像取得を再依頼
+            DOWNLOAD_PROMPT="request_id $REQUEST_ID から画像をダウンロードして、morning-image.pngとして現在のディレクトリに保存してください。"
+            echo "🔄 Request IDから画像取得を試行..."
+            DOWNLOAD_RESULT=$(timeout 60 npx @anthropic-ai/claude-code \
+              --mcp-config="$(pwd)/mcp-config.json" \
+              --allowedTools "mcp__t2i-kamui-qwen-image__qwen_image_generate" \
+              --max-turns 5 \
+              --permission-mode "bypassPermissions" \
+              --print \
+              "$DOWNLOAD_PROMPT" 2>&1) || true
+            echo "📥 画像取得結果: $DOWNLOAD_RESULT"
+          fi
           
           # Claude Codeの出力からファイル名を抽出（複数パターン）
           CLAUDE_FILE=""
