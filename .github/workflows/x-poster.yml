@@ -56,7 +56,23 @@ jobs:
       run: |
         echo "🐦 X (Twitter) 投稿開始"
         echo ""
-        echo "投稿内容: ${{ inputs.tweet-text }}"
+        echo "🔍 デバッグ情報:"
+        echo "  - 受信したテキスト: '${{ inputs.tweet-text }}'"
+        echo "  - テキストの長さ: $(echo -n '${{ inputs.tweet-text }}' | wc -c)"
+        echo "  - 画像ファイル: '${{ inputs.image-file }}'"
+        echo ""
+        
+        # テキストが空の場合のデフォルト設定
+        TWEET_TEXT="${{ inputs.tweet-text }}"
+        if [ -z "$TWEET_TEXT" ] || [ "$TWEET_TEXT" = "null" ]; then
+          TWEET_TEXT="おはよう！素敵な一日を✨"
+          echo "⚠️ テキストが空のため、デフォルトテキストを使用: $TWEET_TEXT"
+        fi
+        
+        echo "📝 投稿するテキスト: $TWEET_TEXT"
+        
+        # Pythonスクリプトに渡すための環境変数設定
+        export FINAL_TWEET_TEXT="$TWEET_TEXT"
         
         # 必要な環境変数のチェック
         if [ -z "$X_API_KEY" ] || [ -z "$X_API_SECRET" ] || [ -z "$X_ACCESS_TOKEN" ] || [ -z "$X_ACCESS_TOKEN_SECRET" ]; then
@@ -91,7 +107,7 @@ jobs:
         ACCESS_TOKEN_SECRET = os.environ.get('X_ACCESS_TOKEN_SECRET')
         
         # 投稿内容
-        TWEET_TEXT = "${{ inputs.tweet-text }}"
+        TWEET_TEXT = os.environ.get('FINAL_TWEET_TEXT', "${{ inputs.tweet-text }}")
         IMAGE_FILE = "${{ inputs.image-file }}" if "${{ inputs.image-file }}" else None
         
         def create_oauth_signature(method, url, params, api_secret, token_secret):
