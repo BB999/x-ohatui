@@ -158,15 +158,24 @@ jobs:
               DOWNLOADED_FILE="$CLAUDE_FILE"
               echo "✅ パターン0（Claude出力）で発見: $DOWNLOADED_FILE"
             else
-              echo "⚠️ パターン0: 相対パスでファイルが存在しません: $CLAUDE_FILE"
-              # 絶対パスの場合、直接アクセス試行
+              echo "⚠️ パターン0: 直接パスでファイルが存在しません: $CLAUDE_FILE"
+              # 絶対パスの場合、複数の方法でアクセス試行
               if [[ "$CLAUDE_FILE" == /* ]]; then
-                echo "🔍 絶対パス検出 - sudoで直接アクセス試行"
+                echo "🔍 絶対パス検出 - 複数の方法でアクセス試行"
                 BASENAME_FILE=$(basename "$CLAUDE_FILE")
                 echo "🔍 ファイル名: $BASENAME_FILE"
                 
-                # sudoでファイル存在確認
-                if sudo test -f "$CLAUDE_FILE"; then
+                # 方法1: 直接アクセス
+                if [ -f "$CLAUDE_FILE" ]; then
+                  echo "✅ 直接アクセスでファイル発見: $CLAUDE_FILE"
+                  if cp "$CLAUDE_FILE" "./$BASENAME_FILE" 2>/dev/null; then
+                    DOWNLOADED_FILE="./$BASENAME_FILE"
+                    echo "✅ 直接アクセスでワーキングディレクトリにコピー完了: $DOWNLOADED_FILE"
+                  fi
+                fi
+                
+                # 方法2: sudoでアクセス
+                if [ -z "$DOWNLOADED_FILE" ] && sudo test -f "$CLAUDE_FILE" 2>/dev/null; then
                   echo "✅ sudo権限で絶対パスファイル発見: $CLAUDE_FILE"
                   if sudo cp "$CLAUDE_FILE" "./$BASENAME_FILE" 2>/dev/null; then
                     sudo chown runner:docker "./$BASENAME_FILE" 2>/dev/null || true
@@ -175,9 +184,32 @@ jobs:
                   else
                     echo "::warning::⚠️ sudoでもファイルコピーに失敗"
                   fi
-                else
-                  echo "⚠️ sudoでも絶対パスファイルアクセスできません"
-                  sudo ls -la "$CLAUDE_FILE" 2>/dev/null || echo "sudoでもls確認: ファイルアクセスできません"
+                fi
+                
+                # 方法3: パス内検索
+                if [ -z "$DOWNLOADED_FILE" ]; then
+                  echo "🔍 ファイルシステム内で morning-image.png を検索中..."
+                  FOUND_FILE=$(find /home -name "morning-image.png" -type f 2>/dev/null | head -1)
+                  if [ ! -z "$FOUND_FILE" ]; then
+                    echo "✅ ファイルシステム検索で発見: $FOUND_FILE"
+                    if cp "$FOUND_FILE" "./$BASENAME_FILE" 2>/dev/null || sudo cp "$FOUND_FILE" "./$BASENAME_FILE" 2>/dev/null; then
+                      sudo chown runner:docker "./$BASENAME_FILE" 2>/dev/null || true
+                      DOWNLOADED_FILE="./$BASENAME_FILE"
+                      echo "✅ ファイルシステム検索からコピー完了: $DOWNLOADED_FILE"
+                    fi
+                  else
+                    echo "⚠️ ファイルシステム検索でも見つかりませんでした"
+                  fi
+                fi
+                
+                if [ -z "$DOWNLOADED_FILE" ]; then
+                  echo "::warning::⚠️ 全ての方法でファイルアクセスに失敗"
+                  echo "::warning::デバッグ情報:"
+                  echo "::warning::- pwd: $(pwd)"
+                  echo "::warning::- ls /home/runner/work/ 内容:"
+                  sudo ls -la /home/runner/work/ 2>/dev/null || echo "アクセスできません"
+                  echo "::warning::- find結果:"
+                  sudo find /home -name "*morning*" -type f 2>/dev/null | head -10 || echo "findでエラー"
                 fi
               fi
             fi
