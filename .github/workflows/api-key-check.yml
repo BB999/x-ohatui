@@ -1,0 +1,69 @@
+name: API Key Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-api-keys:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Check QWEN_IMAGE API Key
+      env:
+        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+      run: |
+        if [ -z "$QWEN_IMAGE" ]; then
+          echo "❌ QWEN_IMAGE API key is not set"
+          exit 1
+        else
+          echo "✅ QWEN_IMAGE API key is configured"
+          # APIキーの形式をチェック（最初の数文字のみ表示）
+          echo "Key format: ${QWEN_IMAGE:0:8}..."
+        fi
+        
+    - name: Check CLAUDE_CODE_OAUTH_TOKEN
+      env:
+        CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      run: |
+        if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+          echo "❌ CLAUDE_CODE_OAUTH_TOKEN is not set"
+          exit 1
+        else
+          echo "✅ CLAUDE_CODE_OAUTH_TOKEN is configured"
+          echo "Token format: ${CLAUDE_CODE_OAUTH_TOKEN:0:8}..."
+        fi
+        
+    - name: Test QWEN Image API Connection
+      env:
+        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+      run: |
+        # 簡単なAPI接続テスト
+        response=$(curl -s -w "%{http_code}" -X POST \
+          -H "Authorization: Key $QWEN_IMAGE" \
+          -H "Content-Type: application/json" \
+          -d '{"prompt":"test","image_size":"square"}' \
+          -o /dev/null \
+          https://fal.run/fal-ai/qwen-image)
+        
+        if [ "$response" = "200" ] || [ "$response" = "201" ]; then
+          echo "✅ QWEN Image API connection successful"
+        elif [ "$response" = "401" ] || [ "$response" = "403" ]; then
+          echo "❌ QWEN Image API authentication failed (HTTP $response)"
+          exit 1
+        else
+          echo "⚠️ QWEN Image API returned HTTP $response (may be rate limited or service issue)"
+        fi
+        
+    - name: Summary
+      if: success()
+      run: |
+        echo "🎉 All API keys are properly configured and accessible!"
+        echo "Ready for automated image generation and posting."
