@@ -41,23 +41,13 @@ jobs:
           echo "Token format: ${CLAUDE_CODE_OAUTH_TOKEN:0:8}..."
         fi
         
-    - name: Test QWEN Image API Connection
+    - name: Validate QWEN Image URL Format
       env:
         QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
       run: |
-        # Kamui Code MCP接続テスト
+        # Kamui Code MCP URL形式をチェック
         if [[ "$QWEN_IMAGE" == https://kamui-code.ai* ]]; then
           echo "✅ QWEN_IMAGE URL format is correct for Kamui Code MCP"
-          echo "URL: $QWEN_IMAGE"
-          
-          # 簡単な接続テスト
-          response=$(curl -s -w "%{http_code}" -X GET -o /dev/null "$QWEN_IMAGE")
-          
-          if [ "$response" = "200" ] || [ "$response" = "405" ]; then
-            echo "✅ Kamui Code MCP endpoint is accessible"
-          else
-            echo "⚠️ Kamui Code MCP returned HTTP $response"
-          fi
         else
           echo "❌ QWEN_IMAGE should be Kamui Code MCP URL, got: ${QWEN_IMAGE:0:20}..."
           exit 1
