@@ -94,7 +94,7 @@ jobs:
           echo "🎯 Claude Code SDK実行中（180秒タイムアウト）..."
           IMAGE_RESULT=$(timeout 180 npx @anthropic-ai/claude-code \
             --mcp-config="$(pwd)/mcp-config.json" \
-            --allowedTools "Read,mcp__t2i-kamui-qwen-image" \
+            --allowedTools "Read,mcp__t2i-kamui-qwen-image__qwen_image_generate" \
             --max-turns 12 \
             --permission-mode "bypassPermissions" \
             --print \
