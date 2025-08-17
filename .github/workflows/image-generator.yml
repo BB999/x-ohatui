@@ -70,8 +70,8 @@ jobs:
           fi
           echo "✅ scene.ymlファイルを確認しました"
           
-          # Claude Code SDKでシチュエーション、表情、ポーズ、カメラを生成
-          PROMPT="画像を生成してください。まずReadツールでyml/scene.ymlファイルを読み込んで、そのキャラクター設定を理解してください。その上で、以下の手順で創意工夫して画像を生成してください：1.まず魅力的なシチュエーション（場所・時間・環境・状況）をランダムに決定、2.そのシチュエーションに最も適した表情を選択（例：教室なら集中、公園なら楽しそう、図書館なら静か、お祭りならわくわく）、3.シチュエーションと表情に合う自然なポーズを選択（例：本を読んでいるなら座って本を持つ、走っているなら動的なポーズ）、4.シチュエーションを最も魅力的に見せるカメラアングルを選択（例：ジャンプなら少し下から、読書ならクローズアップ）、5.シチュエーションに合った詳細な背景を描画（例：教室なら黒板・机・窓、公園なら緑・ベンチ・青空、図書館なら本棚・静かな雰囲気）。キャラクターはscene.ymlの設定通り（アニメ女子高生のツインテール、セーラー服、三毛猫の相棒）で、アニメ/マンガ風の高品質デジタルアート、アスペクト比は正方形(square)で生成してください。設定: 保存場所は現在のワーキングディレクトリ $(pwd), ファイル名はmorning-image.png, Qwen-Imageツールを使って画像生成を完了し、必ずmorning-image.pngという名前で保存してください。"
+          # シンプルな画像生成プロンプト
+          PROMPT="yml/scene.ymlの設定でアニメ風画像を生成して。ツインテール女子高生とセーラー服、三毛猫と一緒。楽しいシチュエーションで。アスペクト比は正方形。ファイル名: morning-image.png"
           
           echo "🤖 Claude Code SDK実行開始"
           
@@ -80,7 +80,7 @@ jobs:
           IMAGE_RESULT=$(timeout 180 npx @anthropic-ai/claude-code \
             --mcp-config="$(pwd)/mcp-config.json" \
             --allowedTools "Read,mcp__t2i-kamui-qwen-image,Bash" \
-            --max-turns 12 \
+            --max-turns 20 \
             --permission-mode "bypassPermissions" \
             --print \
             --verbose \
