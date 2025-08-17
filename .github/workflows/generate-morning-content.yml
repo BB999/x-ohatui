@@ -18,16 +18,25 @@ jobs:
     uses: ./.github/workflows/image-generator.yml
     secrets: inherit
     
-  summary:
+  post-to-x:
     needs: [generate-text, generate-image]
+    uses: ./.github/workflows/x-poster.yml
+    secrets: inherit
+    with:
+      tweet-text: ${{ needs.generate-text.outputs.morning-text }}
+      image-file: "morning-image.png"
+    
+  summary:
+    needs: [generate-text, generate-image, post-to-x]
     runs-on: ubuntu-latest
     
     steps:
     - name: Display Final Results
       run: |
-        echo "🎉 Morning content generation completed!"
+        echo "🎉 Morning content generation & posting completed!"
         echo ""
         echo "📝 Generated Text: ${{ needs.generate-text.outputs.morning-text }}"
         echo "🖼️ Generated Image: ${{ needs.generate-image.outputs.image-url }}"
+        echo "🐦 Posted to X (Twitter): ✅"
         echo ""
-        echo "✅ Ready for posting to X (Twitter)!"
+        echo "✅ All done! Check your X account for the post."
