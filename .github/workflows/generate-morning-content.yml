@@ -6,14 +6,17 @@ on:
 jobs:
   check-api-keys:
     uses: ./.github/workflows/api-key-check.yml
+    secrets: inherit
     
   generate-text:
     needs: check-api-keys
     uses: ./.github/workflows/text-generator.yml
+    secrets: inherit
     
   generate-image:
     needs: check-api-keys
     uses: ./.github/workflows/image-generator.yml
+    secrets: inherit
     
   summary:
     needs: [generate-text, generate-image]
