@@ -51,14 +51,19 @@ jobs:
         for RETRY_COUNT in {1..3}; do
           echo "🔄 画像生成試行 $RETRY_COUNT/3"
           
-          PROMPT="美しい朝の風景画像を生成してください。日の出、平和で暖かい雰囲気、柔らかい光、自然の風景、落ち着いた色合いで。アスペクト比は正方形(square)で、ファイル名はmorning-image.pngとして現在のディレクトリに保存してください。"
+          # scene.ymlファイルを読み込み
+          SCENE_DATA=$(cat yml/scene.yml)
+          echo "📋 scene.ymlファイルを読み込みました"
+          
+          # Claude Code SDKでシチュエーション、表情、ポーズ、カメラを生成
+          PROMPT="yml/scene.ymlのキャラクター設定を使って、アニメスタイルの高品質デジタルアートを生成してください。まずReadツールでyml/scene.ymlファイルを読み込んで、そのキャラクター設定を理解してください。その上で、以下の手順で創意工夫して画像を生成してください：1.まず魅力的なシチュエーション（場所・時間・環境・状況）をランダムに決定、2.そのシチュエーションに最も適した表情を選択（例：教室なら集中、公園なら楽しそう、図書館なら静か、お祭りならわくわく）、3.シチュエーションと表情に合う自然なポーズを選択（例：本を読んでいるなら座って本を持つ、走っているなら動的なポーズ）、4.シチュエーションを最も魅力的に見せるカメラアングルを選択（例：ジャンプなら少し下から、読書ならクローズアップ）、5.シチュエーションに合った詳細な背景を描画（例：教室なら黒板・机・窓、公園なら緑・ベンチ・青空、図書館なら本棚・静かな雰囲気）。キャラクターはscene.ymlの設定通り（アニメ女子高生のツインテール、セーラー服、三毛猫の相棒）で、アニメ/マンガ風の高品質デジタルアート、アスペクト比は正方形(square)で生成してください。"
           
           echo "🤖 Claude Code SDK実行開始"
           
           # Claude Code SDKの実行
           IMAGE_RESULT=$(timeout 180 npx @anthropic-ai/claude-code \
             --mcp-config="$(pwd)/mcp-config.json" \
-            --allowedTools "mcp__t2i-kamui-qwen-image" \
+            --allowedTools "Read,mcp__t2i-kamui-qwen-image" \
             --max-turns 8 \
             --permission-mode "acceptEdits" \
             --print \
@@ -77,59 +82,16 @@ jobs:
           # 結果からURLを抽出
           IMAGE_URL=$(echo "$IMAGE_RESULT" | grep -oP 'https://[^\s]+\.(png|jpg|jpeg|webp)' | head -1)
           
-          # ダウンロードされたファイルを検索
-          DOWNLOADED_FILE=""
-          
-          # パターン1: morning-image.*
-          DOWNLOADED_FILE=$(find . -name "morning-image.*" -type f 2>/dev/null | head -1)
-          
-          # パターン2: 最近作成された画像ファイル
-          if [ -z "$DOWNLOADED_FILE" ]; then
-            DOWNLOADED_FILE=$(find . -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" -type f -mmin -5 2>/dev/null | head -1)
-          fi
-          
           echo "🔍 URL抽出結果: '$IMAGE_URL'"
-          echo "📁 ダウンロードされたファイル: '$DOWNLOADED_FILE'"
           
-          # ファイル処理
-          if [ ! -z "$DOWNLOADED_FILE" ] && [ -s "$DOWNLOADED_FILE" ]; then
-            echo "✅ 既にダウンロードされたファイルを使用: $DOWNLOADED_FILE"
-            
-            FILE_SIZE=$(stat -c%s "$DOWNLOADED_FILE")
-            FILE_TYPE=$(file "$DOWNLOADED_FILE")
-            
-            # 画像ファイルかチェック
-            if echo "$FILE_TYPE" | grep -qE "(image|PNG|JPEG|WebP)" && [ $FILE_SIZE -gt 1000 ]; then
-              echo "✅ 有効な画像ファイルと判定"
-              
-              # morning-image.pngに変換/コピー
-              if cp "$DOWNLOADED_FILE" "morning-image.png" 2>/dev/null; then
-                echo "✅ 画像をmorning-image.pngに保存成功"
-                SUCCESS=true
-                break
-              fi
-            fi
-          elif [ ! -z "$IMAGE_URL" ] && [[ "$IMAGE_URL" =~ ^https:// ]]; then
-            echo "✅ HTTPS URLからダウンロードを試行: $IMAGE_URL"
-            
-            if curl -L "$IMAGE_URL" -o "morning-image.png" --max-time 60; then
-              if [ -s "morning-image.png" ]; then
-                FILE_SIZE=$(stat -c%s "morning-image.png")
-                echo "📊 ダウンロードファイルサイズ: ${FILE_SIZE} bytes"
-                
-                if [ $FILE_SIZE -gt 1000 ]; then
-                  echo "✅ 有効な画像ファイルをダウンロード"
-                  SUCCESS=true
-                  break
-                fi
-              fi
-            fi
+          # 画像URL取得チェック
+          if [ ! -z "$IMAGE_URL" ] && [[ "$IMAGE_URL" =~ ^https:// ]]; then
+            echo "✅ 画像URLを取得成功: $IMAGE_URL"
+            SUCCESS=true
+            break
           fi
           
           echo "::warning::⚠️ 画像生成失敗（試行 $RETRY_COUNT/3）"
-          
-          # ファイルをクリーンアップ
-          rm -f morning-image.png *.png 2>/dev/null || true
           
           if [ $RETRY_COUNT -lt 3 ]; then
             echo "🔄 5秒後に再試行します..."
@@ -143,21 +105,10 @@ jobs:
           exit 1
         fi
         
-        # 最終ファイルチェック
-        if [ -f "morning-image.png" ] && [ -s "morning-image.png" ]; then
-          FINAL_SIZE=$(stat -c%s "morning-image.png")
-          echo "✅ 最終画像ファイル生成完了 (${FINAL_SIZE} bytes)"
-        else
-          echo "::error::❌ 最終画像ファイルの生成に失敗しました"
-          exit 1
-        fi
+        echo "✅ 画像URL取得完了: $IMAGE_URL"
         
         # アウトプットとして設定
-        if [ ! -z "$IMAGE_URL" ]; then
-          echo "image-url=$IMAGE_URL" >> $GITHUB_OUTPUT
-        else
-          echo "image-url=file://$(pwd)/morning-image.png" >> $GITHUB_OUTPUT
-        fi
+        echo "image-url=$IMAGE_URL" >> $GITHUB_OUTPUT
         
         echo "✅ Image generation completed"
         

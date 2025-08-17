@@ -1,0 +1,31 @@
+name: "Anime Girl and Cat Character Scene"
+description: "A detailed anime-style illustration featuring a schoolgirl with twin tails and calico cat with 3D glasses"
+
+characters:
+  main_character:
+    type: "anime girl"
+    age_appearance: "teenager"
+    hair:
+      color: "black"
+      style: "twin tails, short"
+      length: "shoulder-length"
+    clothing:
+      type: "sailor uniform"
+      top: "white sailor shirt with blue collar and red necktie"
+      bottom: "dark blue/navy pleated skirt"
+      sleeves: "short sleeves"
+    expression: "cheerful, energetic"
+    pose: "running/jumping motion"
+    
+  companion:
+    type: "cat"
+    color: "calico (orange, black, white patches)"
+    accessories: "3D glasses (red and blue)"
+    expression: "happy, excited"
+    pose: "running alongside the girl"
+
+style:
+  art_style: "anime/manga"
+  rendering: "high quality digital art"
+  mood: "energetic, joyful, adventurous"
+  atmosphere: "warm and nostalgic"
