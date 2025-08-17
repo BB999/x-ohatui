@@ -14,44 +14,63 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install Claude Code CLI
-      run: |
-        # Claude Code CLIをインストール
-        curl -fsSL https://claude.ai/install.sh | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install Claude Code SDK
+      run: npm install @anthropic-ai/claude-code
         
     - name: Generate Morning Greeting Text
       id: generate
       env:
         CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       run: |
-        # Claude Code CLIで認証
-        echo "$CLAUDE_CODE_OAUTH_TOKEN" | claude auth login --token
-        
-        # Claude Code CLIでおはようテキストを生成（3回リトライ）
+        # Claude Code SDKでおはようテキストを生成（3回リトライ）
         max_retries=3
         retry_count=0
         success=false
         
+        WORK_DIR="text-work"
+        mkdir -p "$WORK_DIR"
+        
         while [ $retry_count -lt $max_retries ] && [ "$success" = "false" ]; do
           retry_count=$((retry_count + 1))
-          echo "🔄 Attempt $retry_count/$max_retries: Generating text with Claude Code..."
+          echo "🔄 Attempt $retry_count/$max_retries: Generating text with Claude Code SDK..."
           
-          # Claude Code CLIでテキスト生成
-          morning_text=$(claude --no-input "日本語で素敵なおはようの挨拶を1つ作って。20文字以内で、温かみがあって親しみやすい感じで。絵文字は使わないで。" 2>/dev/null)
+          PROMPT="日本語で素敵なおはようの挨拶を1つ作って。20文字以内で、温かみがあって親しみやすい感じで。絵文字は使わないで。
+          
+          以下のJSONファイルを morning_text.json として現在のディレクトリに保存してください：
+          {\"text\": \"生成したおはよう挨拶テキスト\"}
+          
+          **重要**: Writeツールを使用してファイルを確実に保存してください。"
+          
+          cd "$WORK_DIR" && npx @anthropic-ai/claude-code \
+            --allowedTools "Write" \
+            --max-turns 5 \
+            --permission-mode "acceptEdits" \
+            -p "$PROMPT"
+          
+          # 元のディレクトリに戻る
+          cd - > /dev/null 2>&1
           
           # 成功チェック
-          if [ $? -eq 0 ] && [ -n "$morning_text" ]; then
-            echo "✅ Text generation successful"
-            success=true
-            break
-          else
-            echo "❌ Attempt $retry_count failed"
+          if [ -f "$WORK_DIR/morning_text.json" ]; then
+            morning_text=$(jq -r '.text' "$WORK_DIR/morning_text.json" 2>/dev/null)
             
-            if [ $retry_count -lt $max_retries ]; then
-              echo "⏳ Waiting 5 seconds before retry..."
-              sleep 5
+            if [ -n "$morning_text" ] && [ "$morning_text" != "null" ]; then
+              echo "✅ Text generation successful"
+              success=true
+              break
             fi
+          fi
+          
+          echo "❌ Attempt $retry_count failed"
+          
+          if [ $retry_count -lt $max_retries ]; then
+            echo "⏳ Waiting 5 seconds before retry..."
+            sleep 5
           fi
         done
         
