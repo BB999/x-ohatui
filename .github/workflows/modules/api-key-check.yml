@@ -1,7 +1,7 @@
-name: API Key Check
+name: API Key Check Module
 
 on:
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   check-api-keys:
@@ -11,11 +11,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
     - name: Check QWEN_IMAGE API Key
       env:
         QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
@@ -25,7 +20,6 @@ jobs:
           exit 1
         else
           echo "✅ QWEN_IMAGE API key is configured"
-          # APIキーの形式をチェック（最初の数文字のみ表示）
           echo "Key format: ${QWEN_IMAGE:0:8}..."
         fi
         
@@ -45,7 +39,6 @@ jobs:
       env:
         QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
       run: |
-        # Kamui Code MCP URL形式をチェック
         if [[ "$QWEN_IMAGE" == https://kamui-code.ai* ]]; then
           echo "✅ QWEN_IMAGE URL format is correct for Kamui Code MCP"
         else
@@ -57,4 +50,4 @@ jobs:
       if: success()
       run: |
         echo "🎉 All API keys are properly configured and accessible!"
-        echo "Ready for automated image generation and posting."
+        echo "Ready for automated content generation."

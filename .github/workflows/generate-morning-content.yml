@@ -1,0 +1,30 @@
+name: Generate Morning Content
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-api-keys:
+    uses: ./.github/workflows/modules/api-key-check.yml
+    
+  generate-text:
+    needs: check-api-keys
+    uses: ./.github/workflows/modules/text-generator.yml
+    
+  generate-image:
+    needs: check-api-keys
+    uses: ./.github/workflows/modules/image-generator.yml
+    
+  summary:
+    needs: [generate-text, generate-image]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Display Final Results
+      run: |
+        echo "🎉 Morning content generation completed!"
+        echo ""
+        echo "📝 Generated Text: ${{ needs.generate-text.outputs.morning-text }}"
+        echo "🖼️ Generated Image: ${{ needs.generate-image.outputs.image-url }}"
+        echo ""
+        echo "✅ Ready for posting to X (Twitter)!"

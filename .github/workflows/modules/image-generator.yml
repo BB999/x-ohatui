@@ -1,0 +1,100 @@
+name: Image Generator Module
+
+on:
+  workflow_call:
+
+jobs:
+  generate-image:
+    runs-on: ubuntu-latest
+    
+    outputs:
+      image-url: ${{ steps.generate.outputs.image-url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Generate Morning Image
+      id: generate
+      env:
+        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+      run: |
+        # 画像生成用プロンプト
+        cat > image_prompt.json << 'EOF'
+        {
+          "prompt": "Beautiful morning scene with sunrise, peaceful and warm atmosphere, soft lighting, nature landscape, calming colors",
+          "image_size": "square",
+          "num_inference_steps": 28,
+          "guidance_scale": 7.5
+        }
+        EOF
+        
+        # Kamui Code MCP画像生成API（3回リトライ）
+        max_retries=3
+        retry_count=0
+        success=false
+        
+        while [ $retry_count -lt $max_retries ] && [ "$success" = "false" ]; do
+          retry_count=$((retry_count + 1))
+          echo "🔄 Attempt $retry_count/$max_retries: Generating image via Kamui Code MCP..."
+          
+          response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X POST "$QWEN_IMAGE" \
+            -H "Content-Type: application/json" \
+            -d @image_prompt.json)
+          
+          # HTTPステータスコードとレスポンス本体を分離
+          http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+          response_body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
+          
+          echo "HTTP Status: $http_code"
+          
+          # 成功判定
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Image generation successful"
+            success=true
+            break
+          else
+            echo "❌ Attempt $retry_count failed with status $http_code"
+            echo "Error details: $response_body"
+            
+            if [ $retry_count -lt $max_retries ]; then
+              echo "⏳ Waiting 5 seconds before retry..."
+              sleep 5
+            fi
+          fi
+        done
+        
+        # 全てのリトライが失敗した場合
+        if [ "$success" = "false" ]; then
+          echo "❌ All $max_retries attempts failed. Image generation API is unavailable."
+          echo "🚫 Stopping workflow execution."
+          exit 1
+        fi
+        
+        echo "Image API Response: $response_body"
+        
+        # 画像URLを抽出
+        image_url=$(echo "$response_body" | jq -r '.images[0].url // .image_url // .url // ""')
+        
+        # 画像URL取得チェック
+        if [ -z "$image_url" ] || [ "$image_url" = "null" ]; then
+          echo "❌ Failed to extract image URL from API response"
+          echo "🚫 Stopping workflow execution."
+          exit 1
+        fi
+        
+        echo "🖼️ Generated image URL: $image_url"
+        
+        # アウトプットとして設定
+        echo "image-url=$image_url" >> $GITHUB_OUTPUT
+        
+        echo "✅ Image generation completed"
+        
+    - name: Display Image Result
+      run: |
+        echo "🖼️ Generated image URL: ${{ steps.generate.outputs.image-url }}"
