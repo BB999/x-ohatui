@@ -2,6 +2,9 @@ name: Generate Morning Content
 
 on:
   workflow_dispatch:
+  schedule:
+    # 毎日朝7時（日本時間）に実行（UTC 22:00 = JST 07:00）
+    - cron: '0 22 * * *'
 
 jobs:
   check-api-keys:
