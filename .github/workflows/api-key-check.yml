@@ -45,13 +45,13 @@ jobs:
       env:
         QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
       run: |
-        # 簡単なAPI接続テスト
+        # 簡単なAPI接続テスト（Kamui Code MCP）
         response=$(curl -s -w "%{http_code}" -X POST \
-          -H "Authorization: Key $QWEN_IMAGE" \
+          -H "Authorization: Bearer $QWEN_IMAGE" \
           -H "Content-Type: application/json" \
           -d '{"prompt":"test","image_size":"square"}' \
           -o /dev/null \
-          https://fal.run/fal-ai/qwen-image)
+          https://kamui-code.ai/t2i/fal/qwen-image)
         
         if [ "$response" = "200" ] || [ "$response" = "201" ]; then
           echo "✅ QWEN Image API connection successful"
