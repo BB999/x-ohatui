@@ -14,53 +14,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Install Claude Code CLI
+      run: |
+        # Claude Code CLIをインストール
+        curl -fsSL https://claude.ai/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
         
     - name: Generate Morning Image
       id: generate
       env:
-        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+        CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       run: |
-        # 画像生成用プロンプト
-        cat > image_prompt.json << 'EOF'
-        {
-          "prompt": "Beautiful morning scene with sunrise, peaceful and warm atmosphere, soft lighting, nature landscape, calming colors",
-          "image_size": "square",
-          "num_inference_steps": 28,
-          "guidance_scale": 7.5
-        }
-        EOF
+        # Claude Code CLIで認証
+        echo "$CLAUDE_CODE_OAUTH_TOKEN" | claude auth login --token
         
-        # Kamui Code MCP画像生成API（3回リトライ）
+        # Claude Code CLIで画像生成（3回リトライ）
         max_retries=3
         retry_count=0
         success=false
         
         while [ $retry_count -lt $max_retries ] && [ "$success" = "false" ]; do
           retry_count=$((retry_count + 1))
-          echo "🔄 Attempt $retry_count/$max_retries: Generating image via Kamui Code MCP..."
+          echo "🔄 Attempt $retry_count/$max_retries: Generating image with Claude Code..."
           
-          response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X POST "$QWEN_IMAGE" \
-            -H "Content-Type: application/json" \
-            -d @image_prompt.json)
+          # Claude Code CLIでMCP経由画像生成
+          image_url=$(claude --no-input "MCPのQwen画像生成を使って、美しい朝の風景画像を生成して。日の出、平和で暖かい雰囲気、柔らかい光、自然の風景、落ち着いた色合いで。画像のURLを返して。" 2>/dev/null | grep -oE 'https?://[^\s]+\.(jpg|jpeg|png|webp)' | head -1)
           
-          # HTTPステータスコードとレスポンス本体を分離
-          http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
-          response_body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
-          
-          echo "HTTP Status: $http_code"
-          
-          # 成功判定
-          if [ "$http_code" = "200" ]; then
+          # 成功チェック
+          if [ $? -eq 0 ] && [ -n "$image_url" ]; then
             echo "✅ Image generation successful"
             success=true
             break
           else
-            echo "❌ Attempt $retry_count failed with status $http_code"
-            echo "Error details: $response_body"
+            echo "❌ Attempt $retry_count failed"
             
             if [ $retry_count -lt $max_retries ]; then
               echo "⏳ Waiting 5 seconds before retry..."
@@ -71,19 +57,7 @@ jobs:
         
         # 全てのリトライが失敗した場合
         if [ "$success" = "false" ]; then
-          echo "❌ All $max_retries attempts failed. Image generation API is unavailable."
-          echo "🚫 Stopping workflow execution."
-          exit 1
-        fi
-        
-        echo "Image API Response: $response_body"
-        
-        # 画像URLを抽出
-        image_url=$(echo "$response_body" | jq -r '.images[0].url // .image_url // .url // ""')
-        
-        # 画像URL取得チェック
-        if [ -z "$image_url" ] || [ "$image_url" = "null" ]; then
-          echo "❌ Failed to extract image URL from API response"
+          echo "❌ All $max_retries attempts failed. Claude Code image generation is unavailable."
           echo "🚫 Stopping workflow execution."
           exit 1
         fi

@@ -14,59 +14,39 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Install Claude Code CLI
+      run: |
+        # Claude Code CLIをインストール
+        curl -fsSL https://claude.ai/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
         
     - name: Generate Morning Greeting Text
       id: generate
       env:
         CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       run: |
-        # Claude Code APIでおはようテキストを生成
-        cat > prompt.json << 'EOF'
-        {
-          "model": "claude-3-5-sonnet-20241022",
-          "max_tokens": 100,
-          "messages": [
-            {
-              "role": "user",
-              "content": "日本語で素敵なおはようの挨拶を1つ作って。20文字以内で、温かみがあって親しみやすい感じで。絵文字は使わないで。"
-            }
-          ]
-        }
-        EOF
+        # Claude Code CLIで認証
+        echo "$CLAUDE_CODE_OAUTH_TOKEN" | claude auth login --token
         
-        # Claude APIにリクエスト送信（3回リトライ）
+        # Claude Code CLIでおはようテキストを生成（3回リトライ）
         max_retries=3
         retry_count=0
         success=false
         
         while [ $retry_count -lt $max_retries ] && [ "$success" = "false" ]; do
           retry_count=$((retry_count + 1))
-          echo "🔄 Attempt $retry_count/$max_retries: Sending request to Claude API..."
+          echo "🔄 Attempt $retry_count/$max_retries: Generating text with Claude Code..."
           
-          response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X POST https://api.anthropic.com/v1/messages \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $CLAUDE_CODE_OAUTH_TOKEN" \
-            -H "anthropic-version: 2023-06-01" \
-            -d @prompt.json)
+          # Claude Code CLIでテキスト生成
+          morning_text=$(claude --no-input "日本語で素敵なおはようの挨拶を1つ作って。20文字以内で、温かみがあって親しみやすい感じで。絵文字は使わないで。" 2>/dev/null)
           
-          # HTTPステータスコードとレスポンス本体を分離
-          http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
-          response_body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
-          
-          echo "HTTP Status: $http_code"
-          
-          # 成功判定
-          if [ "$http_code" = "200" ]; then
-            echo "✅ API request successful"
+          # 成功チェック
+          if [ $? -eq 0 ] && [ -n "$morning_text" ]; then
+            echo "✅ Text generation successful"
             success=true
             break
           else
-            echo "❌ Attempt $retry_count failed with status $http_code"
-            echo "Error details: $response_body"
+            echo "❌ Attempt $retry_count failed"
             
             if [ $retry_count -lt $max_retries ]; then
               echo "⏳ Waiting 5 seconds before retry..."
@@ -77,19 +57,7 @@ jobs:
         
         # 全てのリトライが失敗した場合
         if [ "$success" = "false" ]; then
-          echo "❌ All $max_retries attempts failed. Claude API is unavailable."
-          echo "🚫 Stopping workflow execution."
-          exit 1
-        fi
-        
-        echo "API Response: $response_body"
-        
-        # レスポンスからテキストを抽出
-        morning_text=$(echo "$response_body" | jq -r '.content[0].text // ""')
-        
-        # JSONパースエラーチェック
-        if [ -z "$morning_text" ] || [ "$morning_text" = "null" ]; then
-          echo "❌ Failed to extract text from API response"
+          echo "❌ All $max_retries attempts failed. Claude Code is unavailable."
           echo "🚫 Stopping workflow execution."
           exit 1
         fi
