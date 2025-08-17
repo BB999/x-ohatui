@@ -82,8 +82,18 @@ jobs:
           # 結果からURLを抽出（複数パターン）
           IMAGE_URL=""
           
-          # パターン1: https://で始まる画像URL
+          # パターン1: https://で始まる画像URL（拡張子あり）
           IMAGE_URL=$(echo "$IMAGE_RESULT" | grep -oP 'https://[^\s`"]+\.(png|jpg|jpeg|webp)' | head -1)
+          
+          # パターン1.5: fal.runのURLパターン（拡張子なし）
+          if [ -z "$IMAGE_URL" ]; then
+            IMAGE_URL=$(echo "$IMAGE_RESULT" | grep -oP 'https://[^\s`"]*fal\.run/[^\s`"]+' | head -1)
+          fi
+          
+          # パターン1.6: 一般的なHTTPS URL（より広範囲）
+          if [ -z "$IMAGE_URL" ]; then
+            IMAGE_URL=$(echo "$IMAGE_RESULT" | grep -oP 'https://[^\s`"]+' | grep -E "(image|img|photo|pic|fal|queue)" | head -1)
+          fi
           
           # パターン2: リクエストIDから画像URLを推定
           if [ -z "$IMAGE_URL" ]; then
