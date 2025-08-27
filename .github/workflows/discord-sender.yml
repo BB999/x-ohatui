@@ -44,7 +44,7 @@ jobs:
         npm install
         
     - name: Send message to Discord
-      if: ${{ inputs.message != '' && inputs.embed-title == '' }}
+      if: ${{ inputs.message != '' && inputs.embed-title == '' && inputs.file-path == '' }}
       run: |
         cd discord-sender
         node standalone.js message "${{ inputs.message }}"
