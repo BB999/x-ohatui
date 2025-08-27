@@ -10,63 +10,61 @@ on:
 jobs:
   upload-to-fal:
     runs-on: ubuntu-latest
-    
     outputs:
       url: ${{ steps.upload.outputs.fal-url }}
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download Image Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: morning-image
-        path: ./
+      - name: Checkout code
+        uses: actions/checkout@v4
         
-    - name: Check Downloaded Image
-      run: |
-        echo "Checking downloaded image..."
-        if [ -f "morning-image.png" ]; then
-          echo "Image found: morning-image.png"
-          echo "Size: $(stat -c%s morning-image.png) bytes"
-        else
-          echo "::error::morning-image.png not found"
-          exit 1
-        fi
-        
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        
-    - name: Install Dependencies
-      run: pip install fal-client python-dotenv
-        
-    - name: Upload to FAL
-      id: upload
-      env:
-        FAL_KEY: ${{ secrets.FAL_KEY }}
-      run: |
-        echo "Uploading image to FAL..."
-        python3 upload.py
-        if test -f "fal_url.txt"; then
-          FAL_URL=$(cat fal_url.txt)
-          echo "fal-url=${FAL_URL}" >> "${GITHUB_OUTPUT}"
-          echo "FAL URL: ${FAL_URL}"
-        else
-          echo "::error::Failed to upload to FAL"
-          exit 1
-        fi
-        
-    - name: Save FAL URL as Artifact
-      run: |
-        echo "${{ steps.upload.outputs.fal-url }}" > fal-url.txt
-        echo "Saved FAL URL to artifact"
-        
-    - name: Upload URL Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: fal-url
-        path: fal-url.txt
-        retention-days: 1
+      - name: Download Image Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: morning-image
+          path: ./
+          
+      - name: Check Downloaded Image
+        run: |
+          echo "Checking downloaded image..."
+          if [ -f "morning-image.png" ]; then
+            echo "Image found: morning-image.png"
+            echo "Size: $(stat -c%s morning-image.png) bytes"
+          else
+            echo "::error::morning-image.png not found"
+            exit 1
+          fi
+          
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install Dependencies
+        run: pip install fal-client python-dotenv
+          
+      - name: Upload to FAL
+        id: upload
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+        run: |
+          echo "Uploading image to FAL..."
+          python3 upload.py
+          if test -f "fal_url.txt"; then
+            FAL_URL=$(cat fal_url.txt)
+            echo "fal-url=${FAL_URL}" >> "${GITHUB_OUTPUT}"
+            echo "FAL URL: ${FAL_URL}"
+          else
+            echo "::error::Failed to upload to FAL"
+            exit 1
+          fi
+          
+      - name: Save FAL URL as Artifact
+        run: |
+          echo "${{ steps.upload.outputs.fal-url }}" > fal-url.txt
+          echo "Saved FAL URL to artifact"
+          
+      - name: Upload URL Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fal-url
+          path: fal-url.txt
+          retention-days: 1
