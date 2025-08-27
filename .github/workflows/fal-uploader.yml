@@ -47,7 +47,7 @@ jobs:
           FAL_KEY: ${{ secrets.FAL_KEY }}
         run: |
           echo "Uploading image to FAL..."
-          python3 -c "
+          python3 <<EOF
           import os
           import sys
           import fal_client as fal
@@ -68,7 +68,7 @@ jobs:
           except Exception as e:
               print('Error:', str(e))
               sys.exit(1)
-          "
+          EOF
           if test -f "fal_url.txt"; then
             FAL_URL=$(cat fal_url.txt)
             echo "fal-url=${FAL_URL}" >> "${GITHUB_OUTPUT}"
