@@ -7,7 +7,7 @@ on:
         description: 'Path to the image file to upload'
         required: true
         type: string
-        default: 'images/sample.png'
+        default: 'images/test.png'
   push:
     paths:
       - 'images/**'
