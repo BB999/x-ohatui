@@ -53,7 +53,7 @@ jobs:
         python3 upload.py
         
         if [ -f "fal_url.txt" ]; then
-          FAL_URL=$(cat fal_url.txt)
+          FAL_URL=`cat fal_url.txt`
           echo "fal-url=$FAL_URL" >> $GITHUB_OUTPUT
           echo "FAL URL: $FAL_URL"
         else
