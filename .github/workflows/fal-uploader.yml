@@ -54,8 +54,8 @@ jobs:
         
         if [ -f "fal_url.txt" ]; then
           FAL_URL=$(cat fal_url.txt)
-          echo "fal-url=${FAL_URL}" >> $GITHUB_OUTPUT
-          echo "FAL URL: ${FAL_URL}"
+          echo "fal-url=$FAL_URL" >> $GITHUB_OUTPUT
+          echo "FAL URL: $FAL_URL"
         else
           echo "::error::Failed to upload to FAL"
           exit 1
