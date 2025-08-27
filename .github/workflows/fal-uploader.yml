@@ -49,22 +49,22 @@ jobs:
       env:
         FAL_KEY: ${{ secrets.FAL_KEY }}
       run: |
-        echo "🚀 Uploading image to FAL..."
+        echo "Uploading image to FAL..."
         python3 upload.py
         
         if [ -f "fal_url.txt" ]; then
           FAL_URL=$(cat fal_url.txt)
           echo "fal-url=${FAL_URL}" >> $GITHUB_OUTPUT
-          echo "✅ FAL URL: ${FAL_URL}"
+          echo "FAL URL: ${FAL_URL}"
         else
-          echo "::error::❌ Failed to upload to FAL"
+          echo "::error::Failed to upload to FAL"
           exit 1
         fi
         
     - name: Save FAL URL as Artifact
       run: |
         echo "${{ steps.upload.outputs.fal-url }}" > fal-url.txt
-        echo "📄 Saved FAL URL to artifact"
+        echo "Saved FAL URL to artifact"
         
     - name: Upload URL Artifact
       uses: actions/upload-artifact@v4
