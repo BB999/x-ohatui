@@ -28,9 +28,16 @@ jobs:
     with:
       tweet-text: ${{ needs.generate-text.outputs.morning-text }}
       image-file: "morning-image.png"
+      
+  post-to-discord:
+    needs: [generate-text, generate-image]
+    uses: ./.github/workflows/discord-sender.yml
+    secrets: inherit
+    with:
+      message: ${{ needs.generate-text.outputs.morning-text }}
     
   summary:
-    needs: [generate-text, generate-image, post-to-x]
+    needs: [generate-text, generate-image, post-to-x, post-to-discord]
     runs-on: ubuntu-latest
     
     steps:
@@ -41,5 +48,6 @@ jobs:
         echo "📝 Generated Text: ${{ needs.generate-text.outputs.morning-text }}"
         echo "🖼️ Generated Image: ${{ needs.generate-image.outputs.image-url }}"
         echo "🐦 Posted to X (Twitter): ✅"
+        echo "💬 Posted to Discord: ✅"
         echo ""
         echo "✅ All done! Check your X account for the post."

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "fal-uploader": {
+      "command": "node",
+      "args": ["/Users/noranekob/cursor/MyPC/mcp/FAL/index.js"],
+      "env": {}
+    }
+  }
+}

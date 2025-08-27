@@ -1,0 +1,68 @@
+name: Discord Sender Module
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: 'Discordに送信するメッセージ'
+        required: true
+        type: string
+      file-path:
+        description: '送信するファイルのパス（任意）'
+        required: false
+        type: string
+      embed-title:
+        description: '埋め込みメッセージのタイトル（任意）'
+        required: false
+        type: string
+      embed-description:
+        description: '埋め込みメッセージの説明（任意）'
+        required: false
+        type: string
+      embed-color:
+        description: '埋め込みメッセージの色（16進数、任意）'
+        required: false
+        type: string
+        default: '0099ff'
+
+jobs:
+  send-to-discord:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install discord-sender dependencies
+      run: |
+        cd discord-sender
+        npm install
+        
+    - name: Send message to Discord
+      if: ${{ inputs.message != '' && inputs.embed-title == '' }}
+      run: |
+        cd discord-sender
+        node standalone.js message "${{ inputs.message }}"
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        
+    - name: Send file to Discord
+      if: ${{ inputs.file-path != '' }}
+      run: |
+        cd discord-sender
+        node standalone.js file "${{ inputs.file-path }}" "${{ inputs.message }}"
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        
+    - name: Send embed to Discord
+      if: ${{ inputs.embed-title != '' && inputs.embed-description != '' }}
+      run: |
+        cd discord-sender
+        node standalone.js embed "${{ inputs.embed-title }}" "${{ inputs.embed-description }}" "${{ inputs.embed-color }}"
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

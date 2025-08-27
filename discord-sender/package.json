@@ -1,0 +1,12 @@
+{
+  "name": "mcp-discord-sender",
+  "version": "1.0.0",
+  "description": "MCP server for Discord webhook integration",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "dotenv": "^16.0.0",
+    "form-data": "^4.0.0"
+  }
+}
