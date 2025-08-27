@@ -47,7 +47,9 @@ jobs:
           FAL_KEY: ${{ secrets.FAL_KEY }}
         run: |
           echo "Uploading image to FAL..."
-          python3 <<EOF
+          
+          # Create upload script
+          cat > upload_script.py << 'SCRIPT_EOF'
           import os
           import sys
           import fal_client as fal
@@ -68,10 +70,15 @@ jobs:
           except Exception as e:
               print('Error:', str(e))
               sys.exit(1)
-          EOF
+          SCRIPT_EOF
+          
+          # Execute upload script
+          python3 upload_script.py
+          
+          # Check results
           if test -f "fal_url.txt"; then
             FAL_URL=$(cat fal_url.txt)
-            echo "fal-url=${FAL_URL}" >> "${GITHUB_OUTPUT}"
+            echo "fal-url=${FAL_URL}" >> $GITHUB_OUTPUT
             echo "FAL URL: ${FAL_URL}"
           else
             echo "::error::Failed to upload to FAL"
