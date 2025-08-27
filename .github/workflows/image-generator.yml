@@ -25,6 +25,42 @@ jobs:
       with:
         node-version: '20'
         
+    - name: Download Text Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: morning-content
+        path: ./content
+        
+    - name: Read Generated Content
+      id: read-content
+      run: |
+        echo "📖 Reading generated content..."
+        
+        # ファイルの存在確認
+        ls -la ./content/
+        
+        # コンテンツ読み込み
+        if [ -f "./content/scene-description.txt" ]; then
+          SCENE=$(cat "./content/scene-description.txt")
+          echo "scene=$SCENE" >> $GITHUB_OUTPUT
+          echo "🎬 Scene: $SCENE"
+        else
+          echo "::error::scene-description.txt not found"
+          exit 1
+        fi
+        
+        if [ -f "./content/mamehina-dialogue.txt" ]; then
+          MAMEHINA=$(cat "./content/mamehina-dialogue.txt")
+          echo "mamehina=$MAMEHINA" >> $GITHUB_OUTPUT
+          echo "👧 まめひなた: $MAMEHINA"
+        fi
+        
+        if [ -f "./content/kipferl-dialogue.txt" ]; then
+          KIPFERL=$(cat "./content/kipferl-dialogue.txt")
+          echo "kipferl=$KIPFERL" >> $GITHUB_OUTPUT
+          echo "🐱 キプフェル: $KIPFERL"
+        fi
+        
     - name: Install Claude Code SDK
       run: |
         echo "📦 Claude Code SDKインストール"
@@ -54,33 +90,17 @@ jobs:
           }
         }' > mcp-config.json
         
+        # 生成されたシーンの内容を取得
+        SCENE_DESCRIPTION="${{ steps.read-content.outputs.scene }}"
+        echo "📝 Using generated scene: $SCENE_DESCRIPTION"
+        
         # 画像生成リトライループ（最大3回）
         SUCCESS=false
         for RETRY_COUNT in {1..3}; do
           echo "🔄 画像生成試行 $RETRY_COUNT/3"
           
-          # scene.ymlファイルを読み込み
-          SCENE_DATA=$(cat yml/scene.yml)
-          echo "📋 scene.ymlファイルを読み込みました"
-          
-          # scene.ymlファイルの読み込み確認
-          if [ ! -f "yml/scene.yml" ]; then
-            echo "::error::scene.ymlファイルが見つかりません: yml/scene.yml"
-            exit 1
-          fi
-          echo "✅ scene.ymlファイルを確認しました"
-          
-          # scene.ymlからプロンプト構築
-          if [ -f "yml/scene.yml" ]; then
-            SCENE_CONTENT=$(cat yml/scene.yml)
-            echo "📝 scene.yml内容を読み込みました"
-          else
-            echo "::error::scene.ymlが見つかりません"
-            exit 1
-          fi
-          
-          # 動的シチュエーション生成プロンプト（ファイル保存指示を強化）
-          FULL_PROMPT="yml/scene.ymlの設定を読んで理解してください。その上で、毎回異なる創造的なシチュエーションを考えて画像を生成してください。シチュエーション例：教室で勉強/屋上で弁当/公園で散歩/図書館で読書/海辺で遊ぶ/桜の下でピクニック/夏祭りで屋台巡り/雪景色で雪だるま作り等。それぞれのシチュエーションに適した表情・ポーズ・服装・背景を選んでください。キャラクター：ツインテール女子高生（セーラー服）と三毛猫。スタイル：アニメ/マンガ風。アスペクト比1:1。**重要**: Qwen-Imageツールで画像生成後、必ずrequest_idから画像をダウンロードしてmorning-image.pngというファイル名で現在のディレクトリに保存してください。ファイル保存まで必ず完了させてください。"
+          # 画像生成プロンプト
+          FULL_PROMPT="以下のシチュエーションで画像を生成してください。シチュエーション: $SCENE_DESCRIPTION キャラクター設定: まめひなた(ツインテール女子高生)、キプフェル(三毛猫)。スタイル: アニメ/マンガ風。アスペクト比1:1。Qwen-Imageツールで画像生成後、必ずrequest_idから画像をダウンロードしてmorning-image.pngというファイル名で現在のディレクトリに保存してください。"
           
           echo "🤖 Claude Code SDK実行開始"
           

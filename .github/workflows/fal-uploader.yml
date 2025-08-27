@@ -1,0 +1,122 @@
+name: FAL Uploader Module
+
+on:
+  workflow_call:
+    outputs:
+      fal-url:
+        description: 'FAL画像URL'
+        value: ${{ jobs.upload-to-fal.outputs.url }}
+
+jobs:
+  upload-to-fal:
+    runs-on: ubuntu-latest
+    
+    outputs:
+      url: ${{ steps.upload.outputs.fal-url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download Image Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: morning-image
+        path: ./
+        
+    - name: Check Downloaded Image
+      run: |
+        echo "📁 Checking downloaded image..."
+        if [ -f "morning-image.png" ]; then
+          echo "✅ Image found: morning-image.png"
+          echo "📊 Size: $(stat -c%s morning-image.png) bytes"
+        else
+          echo "::error::❌ morning-image.png not found"
+          exit 1
+        fi
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Dependencies
+      run: |
+        pip install fal-client python-dotenv
+        
+    - name: Upload to FAL
+      id: upload
+      env:
+        FAL_KEY: ${{ secrets.FAL_KEY }}
+      run: |
+        echo "🚀 Uploading image to FAL..."
+        
+        # Python script to upload
+        cat > upload_to_fal.py << 'EOF'
+import os
+import sys
+import fal_client as fal
+
+def upload_image_to_fal(image_path):
+    try:
+        # 環境変数からAPIキーを取得
+        api_key = os.getenv('FAL_KEY')
+        if not api_key:
+            print("Error: FAL_KEY not found in environment variables")
+            return None
+        
+        # 画像ファイルの存在確認
+        if not os.path.exists(image_path):
+            print(f"Error: Image file not found at {image_path}")
+            return None
+        
+        # ファイルサイズチェック
+        file_size = os.path.getsize(image_path)
+        print(f"Uploading: {os.path.basename(image_path)} ({file_size} bytes)")
+        
+        # アップロード
+        with open(image_path, 'rb') as f:
+            file_data = f.read()
+        
+        url = fal.upload(file_data, 'image/png')
+        print(f"✅ Upload successful: {url}")
+        return url
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return None
+
+if __name__ == "__main__":
+    result_url = upload_image_to_fal("morning-image.png")
+    if result_url:
+        print(f"FAL_URL={result_url}")
+        with open("fal_url.txt", "w") as f:
+            f.write(result_url)
+        sys.exit(0)
+    else:
+        sys.exit(1)
+EOF
+        
+        # Upload and capture URL
+        python upload_to_fal.py
+        
+        if [ -f "fal_url.txt" ]; then
+          FAL_URL=$(cat fal_url.txt)
+          echo "fal-url=$FAL_URL" >> $GITHUB_OUTPUT
+          echo "✅ FAL URL: $FAL_URL"
+        else
+          echo "::error::❌ Failed to upload to FAL"
+          exit 1
+        fi
+        
+    - name: Save FAL URL as Artifact
+      run: |
+        echo "${{ steps.upload.outputs.fal-url }}" > fal-url.txt
+        echo "📄 Saved FAL URL to artifact"
+        
+    - name: Upload URL Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fal-url
+        path: fal-url.txt
+        retention-days: 1

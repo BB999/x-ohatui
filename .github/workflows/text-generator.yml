@@ -3,16 +3,24 @@ name: Text Generator Module
 on:
   workflow_call:
     outputs:
-      morning-text:
-        description: '生成された朝の挨拶テキスト'
-        value: ${{ jobs.generate-text.outputs.morning-text }}
+      scene-description:
+        description: '画像のシチュエーション説明'
+        value: ${{ jobs.generate-text.outputs.scene-description }}
+      mamehina-dialogue:
+        description: 'まめひなたのセリフ'
+        value: ${{ jobs.generate-text.outputs.mamehina-dialogue }}
+      kipferl-dialogue:
+        description: 'キプフェルのセリフ'
+        value: ${{ jobs.generate-text.outputs.kipferl-dialogue }}
 
 jobs:
   generate-text:
     runs-on: ubuntu-latest
     
     outputs:
-      morning-text: ${{ steps.generate.outputs.morning-text }}
+      scene-description: ${{ steps.generate.outputs.scene-description }}
+      mamehina-dialogue: ${{ steps.generate.outputs.mamehina-dialogue }}
+      kipferl-dialogue: ${{ steps.generate.outputs.kipferl-dialogue }}
     
     steps:
     - name: Checkout code
@@ -60,25 +68,23 @@ jobs:
           
           echo "🎲 Selected elements: $selected_time, $selected_style, $selected_approach"
           
-          PROMPT="日本語で素敵なおはようの挨拶を1つ作って。
+          PROMPT="朝のシチュエーションとキャラクターのセリフを生成してください。
 
-          条件：
-          - 40文字以内
-          - 絵文字は使わない
-          - 「$selected_time」のイメージを含める
-          - 「$selected_style」表現する
-          - 「$selected_approach」作成する
-          - 毎回異なるオリジナルな表現にする
-          - 一般的すぎる挨拶は避ける
+          キャラクター設定：
+          - まめひなた：ツインテールの女子高生、明るく元気
+          - キプフェル：三毛猫、のんびり屋でちょっとツンデレ
 
-          バリエーション例：
-          - 季節や天候を感じさせる表現
-          - 時間帯の特徴を活かした言葉
-          - 日本語の美しい表現を使った挨拶
-          - 一日の始まりへの期待感を込めた言葉
+          生成する内容：
+          1. シチュエーション説明（100字程度）- 例：教室で朝の準備、公園で朝の散歩、キッチンで朝食準備など
+          2. まめひなたのセリフ（20字程度）- 明るく元気な感じ
+          3. キプフェルのセリフ（20字程度）- 猫らしくのんびり
 
           以下のJSONファイルを morning_text.json として現在のディレクトリに保存してください：
-          {\"text\": \"生成したおはよう挨拶テキスト\"}
+          {
+            \"scene\": \"シチュエーション説明\",
+            \"mamehina\": \"まめひなたのセリフ\",
+            \"kipferl\": \"キプフェルのセリフ\"
+          }
           
           **重要**: Writeツールを使用してファイルを確実に保存してください。"
           
@@ -93,10 +99,15 @@ jobs:
           
           # 成功チェック
           if [ -f "$WORK_DIR/morning_text.json" ]; then
-            morning_text=$(jq -r '.text' "$WORK_DIR/morning_text.json" 2>/dev/null)
+            scene_description=$(jq -r '.scene' "$WORK_DIR/morning_text.json" 2>/dev/null)
+            mamehina_dialogue=$(jq -r '.mamehina' "$WORK_DIR/morning_text.json" 2>/dev/null)
+            kipferl_dialogue=$(jq -r '.kipferl' "$WORK_DIR/morning_text.json" 2>/dev/null)
             
-            if [ -n "$morning_text" ] && [ "$morning_text" != "null" ]; then
+            if [ -n "$scene_description" ] && [ "$scene_description" != "null" ]; then
               echo "✅ Text generation successful"
+              echo "🎬 Scene: $scene_description"
+              echo "👧 まめひなた: $mamehina_dialogue"
+              echo "🐱 キプフェル: $kipferl_dialogue"
               success=true
               break
             fi
@@ -117,37 +128,38 @@ jobs:
           exit 1
         fi
         
-        echo "Generated text: $morning_text"
-        
-        # 文字数制限チェック（40文字以内）
-        char_count=$(echo -n "$morning_text" | wc -m)
-        echo "Character count: $char_count"
-        
-        if [ "$char_count" -gt 40 ]; then
-          echo "⚠️ Text too long ($char_count chars), not truncating to avoid corruption"
-          # 文字化けを避けるため、40文字超過でも切り詰めない
-        fi
-        
-        echo "📝 Final morning greeting: $morning_text"
+        echo "✅ Content generation successful"
         
         # アウトプットとして設定
-        echo "morning-text=$morning_text" >> $GITHUB_OUTPUT
+        echo "scene-description=$scene_description" >> $GITHUB_OUTPUT
+        echo "mamehina-dialogue=$mamehina_dialogue" >> $GITHUB_OUTPUT
+        echo "kipferl-dialogue=$kipferl_dialogue" >> $GITHUB_OUTPUT
         
-        echo "✅ Morning text generation completed"
+        echo "📊 Generated outputs:"
+        echo "  - Scene: $scene_description"
+        echo "  - まめひなた: $mamehina_dialogue"
+        echo "  - キプフェル: $kipferl_dialogue"
         
     - name: Display Result
       run: |
-        echo "📝 Generated morning greeting: ${{ steps.generate.outputs.morning-text }}"
-        echo "Character count: $(echo -n "${{ steps.generate.outputs.morning-text }}" | wc -m)"
+        echo "🎬 Generated scene and dialogues:"
+        echo "Scene: ${{ steps.generate.outputs.scene-description }}"
+        echo "まめひなた: ${{ steps.generate.outputs.mamehina-dialogue }}"
+        echo "キプフェル: ${{ steps.generate.outputs.kipferl-dialogue }}"
         
     - name: Save Text as Artifact
       run: |
-        echo "${{ steps.generate.outputs.morning-text }}" > morning-text.txt
-        echo "📄 Saved text to morning-text.txt"
+        echo "${{ steps.generate.outputs.scene-description }}" > scene-description.txt
+        echo "${{ steps.generate.outputs.mamehina-dialogue }}" > mamehina-dialogue.txt
+        echo "${{ steps.generate.outputs.kipferl-dialogue }}" > kipferl-dialogue.txt
+        echo "📄 Saved all text files"
         
     - name: Upload Text Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: morning-text
-        path: morning-text.txt
+        name: morning-content
+        path: |
+          scene-description.txt
+          mamehina-dialogue.txt
+          kipferl-dialogue.txt
         retention-days: 1

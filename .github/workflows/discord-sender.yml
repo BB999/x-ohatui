@@ -30,6 +30,23 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Download Image Artifact
+      if: ${{ inputs.file-path == '' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: morning-image
+        path: ./
+      continue-on-error: true
+      
+    - name: Check Downloaded Files
+      run: |
+        echo "📁 Checking for images..."
+        ls -la ./ | grep -E "\.(png|jpg|jpeg|gif)" || echo "No image files found"
+        if [ -f "morning-image.png" ]; then
+          echo "✅ Image file found: morning-image.png"
+          echo "📊 File size: $(stat -c%s morning-image.png 2>/dev/null || stat -f%z morning-image.png) bytes"
+        fi
+        
     - name: Debug Inputs
       run: |
         echo "🔍 Discord Sender Debug:"
@@ -39,8 +56,9 @@ jobs:
     - name: Send message to Discord
       if: ${{ inputs.message != '' }}
       run: |
-        echo "📤 Sending to Discord: '${{ inputs.message }}'"
+        echo "📤 Sending message to Discord..."
         
+        # メッセージのみ送信（画像URLはメッセージ内に含まれる）
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
           -H "Content-Type: application/json" \
           -d "{\"content\": \"${{ inputs.message }}\"}" \
