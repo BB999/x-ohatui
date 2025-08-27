@@ -44,29 +44,6 @@ jobs:
       run: |
         pip install fal-client python-dotenv
         
-    - name: Create Upload Script
-      run: |
-        echo 'import os' > upload.py
-        echo 'import sys' >> upload.py
-        echo 'import fal_client as fal' >> upload.py
-        echo '' >> upload.py
-        echo 'try:' >> upload.py
-        echo '    if not os.getenv("FAL_KEY"):' >> upload.py
-        echo '        print("Error: FAL_KEY not found")' >> upload.py
-        echo '        sys.exit(1)' >> upload.py
-        echo '    if not os.path.exists("morning-image.png"):' >> upload.py
-        echo '        print("Error: morning-image.png not found")' >> upload.py
-        echo '        sys.exit(1)' >> upload.py
-        echo '    print("Uploading to FAL...")' >> upload.py
-        echo '    with open("morning-image.png", "rb") as f:' >> upload.py
-        echo '        url = fal.upload(f.read(), "image/png")' >> upload.py
-        echo '    print("Upload successful:", url)' >> upload.py
-        echo '    with open("fal_url.txt", "w") as f:' >> upload.py
-        echo '        f.write(url)' >> upload.py
-        echo 'except Exception as e:' >> upload.py
-        echo '    print("Error:", str(e))' >> upload.py
-        echo '    sys.exit(1)' >> upload.py
-        
     - name: Upload to FAL
       id: upload
       env:
