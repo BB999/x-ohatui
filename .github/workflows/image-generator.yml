@@ -55,11 +55,6 @@ jobs:
           echo "👧 まめひなた: $MAMEHINA"
         fi
         
-        if [ -f "./content/kipferl-dialogue.txt" ]; then
-          KIPFERL=$(cat "./content/kipferl-dialogue.txt")
-          echo "kipferl=$KIPFERL" >> $GITHUB_OUTPUT
-          echo "🐱 キプフェル: $KIPFERL"
-        fi
         
     - name: Install Claude Code SDK
       run: |
