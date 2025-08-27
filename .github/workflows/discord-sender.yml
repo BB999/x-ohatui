@@ -58,10 +58,13 @@ jobs:
       run: |
         echo "📤 Sending message to Discord..."
         
-        # メッセージのみ送信（画像URLはメッセージ内に含まれる）
+        # jqを使って適切なJSONを作成
+        JSON_PAYLOAD=$(jq -n --arg content '${{ inputs.message }}' '{content: $content}')
+        echo "🔍 JSON Payload: $JSON_PAYLOAD"
+        
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
           -H "Content-Type: application/json" \
-          -d "{\"content\": \"${{ inputs.message }}\"}" \
+          -d "$JSON_PAYLOAD" \
           "${{ secrets.DISCORD_WEBHOOK_URL }}")
         
         HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
