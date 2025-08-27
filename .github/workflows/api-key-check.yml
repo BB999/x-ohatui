@@ -11,16 +11,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Check QWEN_IMAGE API Key
+    - name: Check NANO_BANANA_EDIT API Key
       env:
-        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+        NANO_BANANA_EDIT: ${{ secrets.NANO_BANANA_EDIT }}
       run: |
-        if [ -z "$QWEN_IMAGE" ]; then
-          echo "❌ QWEN_IMAGE API key is not set"
+        if [ -z "$NANO_BANANA_EDIT" ]; then
+          echo "❌ NANO_BANANA_EDIT API key is not set"
           exit 1
         else
-          echo "✅ QWEN_IMAGE API key is configured"
-          echo "Key format: ${QWEN_IMAGE:0:8}..."
+          echo "✅ NANO_BANANA_EDIT API key is configured"
+          echo "Key format: ${NANO_BANANA_EDIT:0:8}..."
         fi
         
     - name: Check CLAUDE_CODE_OAUTH_TOKEN
@@ -35,14 +35,14 @@ jobs:
           echo "Token format: ${CLAUDE_CODE_OAUTH_TOKEN:0:8}..."
         fi
         
-    - name: Validate QWEN Image URL Format
+    - name: Validate NANO_BANANA_EDIT URL Format
       env:
-        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+        NANO_BANANA_EDIT: ${{ secrets.NANO_BANANA_EDIT }}
       run: |
-        if [[ "$QWEN_IMAGE" == https://kamui-code.ai* ]]; then
-          echo "✅ QWEN_IMAGE URL format is correct for Kamui Code MCP"
+        if [[ "$NANO_BANANA_EDIT" == https://kamui-code.ai* ]]; then
+          echo "✅ NANO_BANANA_EDIT URL format is correct for Kamui Code MCP"
         else
-          echo "❌ QWEN_IMAGE should be Kamui Code MCP URL, got: ${QWEN_IMAGE:0:20}..."
+          echo "❌ NANO_BANANA_EDIT should be Kamui Code MCP URL, got: ${NANO_BANANA_EDIT:0:20}..."
           exit 1
         fi
         

@@ -70,21 +70,21 @@ jobs:
       id: generate
       env:
         CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-        QWEN_IMAGE: ${{ secrets.QWEN_IMAGE }}
+        NANO_BANANA_EDIT: ${{ secrets.NANO_BANANA_EDIT }}
       run: |
-        # QWEN_IMAGE URLの確認
-        if [ -z "$QWEN_IMAGE" ]; then
-          echo "::error::QWEN_IMAGE is not set in GitHub Secrets"
+        # NANO_BANANA_EDIT URLの確認
+        if [ -z "$NANO_BANANA_EDIT" ]; then
+          echo "::error::NANO_BANANA_EDIT is not set in GitHub Secrets"
           exit 1
         fi
-        echo "✅ QWEN_IMAGE URL is configured"
+        echo "✅ NANO_BANANA_EDIT URL is configured"
         
         # MCP設定を作成
         echo '{
           "mcpServers": {
             "nano-banana-edit-kamui": {
               "type": "http", 
-              "url": "'${QWEN_IMAGE}'",
+              "url": "'${NANO_BANANA_EDIT}'",
               "description": "NANO_BANANA_EDIT Image Generation via Kamui Code"
             }
           }
@@ -117,7 +117,7 @@ jobs:
           echo "📝 Prompt length: ${#FULL_PROMPT}"
           echo "📋 Environment Check:"
           echo "Working directory: $(pwd)"
-          echo "QWEN_IMAGE URL configured: Yes"
+          echo "NANO_BANANA_EDIT URL configured: Yes"
           
           echo "🎯 Claude Code SDK実行中（180秒タイムアウト）..."
           IMAGE_RESULT=$(timeout 180 npx @anthropic-ai/claude-code \
