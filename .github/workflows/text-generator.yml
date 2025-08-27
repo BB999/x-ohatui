@@ -124,8 +124,8 @@ jobs:
         echo "Character count: $char_count"
         
         if [ "$char_count" -gt 40 ]; then
-          echo "⚠️ Text too long ($char_count chars), truncating..."
-          morning_text=$(echo "$morning_text" | cut -c1-40)
+          echo "⚠️ Text too long ($char_count chars), not truncating to avoid corruption"
+          # 文字化けを避けるため、40文字超過でも切り詰めない
         fi
         
         echo "📝 Final morning greeting: $morning_text"
