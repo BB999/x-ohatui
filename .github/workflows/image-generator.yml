@@ -40,12 +40,12 @@ jobs:
         ls -la ./content/
         
         # コンテンツ読み込み
-        if [ -f "./content/scene-description.txt" ]; then
-          SCENE=$(cat "./content/scene-description.txt")
-          echo "scene=$SCENE" >> $GITHUB_OUTPUT
-          echo "🎬 Scene: $SCENE"
+        if [ -f "./content/pose-description.txt" ]; then
+          POSE=$(cat "./content/pose-description.txt")
+          echo "pose=$POSE" >> $GITHUB_OUTPUT
+          echo "🤸 Pose: $POSE"
         else
-          echo "::error::scene-description.txt not found"
+          echo "::error::pose-description.txt not found"
           exit 1
         fi
         
@@ -90,13 +90,11 @@ jobs:
           }
         }' > mcp-config.json
         
-        # 生成されたシーンの内容を取得
-        SCENE_DESCRIPTION="${{ steps.read-content.outputs.scene }}"
+        # 生成されたコンテンツを取得
+        POSE_DESCRIPTION="${{ steps.read-content.outputs.pose }}"
         MAMEHINA_DIALOGUE="${{ steps.read-content.outputs.mamehina }}"
-        KIPFERL_DIALOGUE="${{ steps.read-content.outputs.kipferl }}"
-        echo "📝 Using generated scene: $SCENE_DESCRIPTION"
-        echo "👧 まめひなた: $MAMEHINA_DIALOGUE" 
-        echo "🐱 キプフェル: $KIPFERL_DIALOGUE"
+        echo "🤸 ポーズ: $POSE_DESCRIPTION"
+        echo "👧 まめひなた: $MAMEHINA_DIALOGUE"
         
         # 画像生成リトライループ（最大3回）
         SUCCESS=false
@@ -106,24 +104,19 @@ jobs:
           # 参照画像のURL（まめひなたのみ）
           REF_IMAGE_1="file:///Users/noranekob/cursor/x-ohatui/images/MAMEHINATA.jpg"
           
-          # 台詞からポーズを決定
-          POSE_INSTRUCTION=""
-          if [[ "$MAMEHINA_DIALOGUE" == *"驚"* ]] || [[ "$MAMEHINA_DIALOGUE" == *"びっくり"* ]]; then
-            POSE_INSTRUCTION="驚いた表情で両手を頬に当てるポーズに変更"
-          elif [[ "$MAMEHINA_DIALOGUE" == *"嬉"* ]] || [[ "$MAMEHINA_DIALOGUE" == *"やった"* ]]; then
-            POSE_INSTRUCTION="嬉しそうに片手を上げて喜ぶポーズに変更"
-          elif [[ "$MAMEHINA_DIALOGUE" == *"眠"* ]] || [[ "$MAMEHINA_DIALOGUE" == *"あくび"* ]]; then
-            POSE_INSTRUCTION="眠そうに手で口を覆うあくびポーズに変更"
-          elif [[ "$MAMEHINA_DIALOGUE" == *"走"* ]] || [[ "$MAMEHINA_DIALOGUE" == *"急"* ]]; then
-            POSE_INSTRUCTION="走っているような動的なポーズに変更"
-          else
-            POSE_INSTRUCTION="台詞に合った自然な表情とポーズに変更"
-          fi
+          # 生成されたポーズ説明をそのまま使用
+          POSE_INSTRUCTION="$POSE_DESCRIPTION"
           
           # 画像生成プロンプト（NANO_BANANA_EDIT用）
-          FULL_PROMPT="NANO_BANANA_EDITツールを使って画像を編集してください。参照画像: $REF_IMAGE_1 シチュエーション: $SCENE_DESCRIPTION まめひなたの台詞: $MAMEHINA_DIALOGUE 編集指示: $POSE_INSTRUCTION。背景を朝の時間帯に適した場所（教室・家・街角・公園など）に変更。朝の光が差し込む明るい雰囲気。アスペクト比1:1。morning-image.pngとして保存してください。"
+          FULL_PROMPT="NANO_BANANA_EDITツールを使って参照画像を大幅に編集してください。参照画像: $REF_IMAGE_1 編集内容: まめひなたが「$MAMEHINA_DIALOGUE」と言いながら、次のポーズをしている画像に変更: $POSE_INSTRUCTION。背景は白色または透明。元の画像とは明らかに違うポーズになるように大幅に編集してください。アスペクト比1:1。morning-image.pngで保存。"
           
           echo "🤖 Claude Code SDK実行開始"
+          echo "🔍 Pre-generation Debug:"
+          echo "参照画像: $REF_IMAGE_1"
+          echo "まめひなたの台詞: $MAMEHINA_DIALOGUE"
+          echo "ポーズ説明: $POSE_DESCRIPTION"
+          echo "完全プロンプト: $FULL_PROMPT"
+          echo ""
           
           # Claude Code SDKの実行（RADIO-workflowスタイル）
           echo "🚀 Starting Morning Image Generation..."

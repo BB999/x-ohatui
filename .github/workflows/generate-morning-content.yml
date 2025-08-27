@@ -27,7 +27,7 @@ jobs:
     uses: ./.github/workflows/fal-image-upload.yml
     secrets: inherit
     with:
-      image_path: ${{ needs.generate-image.outputs.image-file }}
+      image_path: morning-image.png
     
   post-to-discord:
     needs: [generate-text, generate-image, upload-to-fal]
@@ -37,14 +37,11 @@ jobs:
       message: |
         ## 🌅 おはよう！
 
-        **🎬 シチュエーション:**
-        ${{ needs.generate-text.outputs.scene-description }}
-
         **👧 まめひなた:**
         ${{ needs.generate-text.outputs.mamehina-dialogue }}
 
-        **🐱 キプフェル:**
-        ${{ needs.generate-text.outputs.kipferl-dialogue }}
+        **🤸 変なポーズ:**
+        ${{ needs.generate-text.outputs.pose-description }}
 
         **🎨 画像:**
         ${{ needs.upload-to-fal.outputs.upload-url }}

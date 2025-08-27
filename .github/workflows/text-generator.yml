@@ -3,24 +3,20 @@ name: Text Generator Module
 on:
   workflow_call:
     outputs:
-      scene-description:
-        description: '画像のシチュエーション説明'
-        value: ${{ jobs.generate-text.outputs.scene-description }}
       mamehina-dialogue:
         description: 'まめひなたのセリフ'
         value: ${{ jobs.generate-text.outputs.mamehina-dialogue }}
-      kipferl-dialogue:
-        description: 'キプフェルのセリフ'
-        value: ${{ jobs.generate-text.outputs.kipferl-dialogue }}
+      pose-description:
+        description: '変なポーズの詳細'
+        value: ${{ jobs.generate-text.outputs.pose-description }}
 
 jobs:
   generate-text:
     runs-on: ubuntu-latest
     
     outputs:
-      scene-description: ${{ steps.generate.outputs.scene-description }}
       mamehina-dialogue: ${{ steps.generate.outputs.mamehina-dialogue }}
-      kipferl-dialogue: ${{ steps.generate.outputs.kipferl-dialogue }}
+      pose-description: ${{ steps.generate.outputs.pose-description }}
     
     steps:
     - name: Checkout code
@@ -68,22 +64,19 @@ jobs:
           
           echo "🎲 Selected elements: $selected_time, $selected_style, $selected_approach"
           
-          PROMPT="朝のシチュエーションとキャラクターのセリフを生成してください。
+          PROMPT="まめひなたのセリフと変なポーズの詳細を生成してください。
 
           キャラクター設定：
           - まめひなた：明るく元気
-          - キプフェル：のんびり屋でちょっとツンデレ
 
           生成する内容：
-          1. シチュエーション説明（100字程度）- 例：教室で朝の準備、公園で朝の散歩、キッチンで朝食準備など
-          2. まめひなたのセリフ（20字程度）- 明るく元気な感じ
-          3. キプフェルのセリフ（20字程度）- のんびり屋でちょっとツンデレ
+          1. まめひなたのセリフ（20字程度）- 明るく元気な感じ
+          2. 変なポーズの詳細（50-100字程度）- 例：両手を頭上に上げてクルクル回る、片足立ちで両腕を広げてバランスを取る、膝をついて両手で頬を支える、猫のように四つん這いになって背中を反らす、など具体的で面白いポーズ
 
           以下のJSONファイルを morning_text.json として現在のディレクトリに保存してください：
           {
-            \"scene\": \"シチュエーション説明\",
             \"mamehina\": \"まめひなたのセリフ\",
-            \"kipferl\": \"キプフェルのセリフ\"
+            \"pose\": \"変なポーズの詳細説明\"
           }
           
           **重要**: Writeツールを使用してファイルを確実に保存してください。"
@@ -99,15 +92,13 @@ jobs:
           
           # 成功チェック
           if [ -f "$WORK_DIR/morning_text.json" ]; then
-            scene_description=$(jq -r '.scene' "$WORK_DIR/morning_text.json" 2>/dev/null)
             mamehina_dialogue=$(jq -r '.mamehina' "$WORK_DIR/morning_text.json" 2>/dev/null)
-            kipferl_dialogue=$(jq -r '.kipferl' "$WORK_DIR/morning_text.json" 2>/dev/null)
+            pose_description=$(jq -r '.pose' "$WORK_DIR/morning_text.json" 2>/dev/null)
             
-            if [ -n "$scene_description" ] && [ "$scene_description" != "null" ]; then
+            if [ -n "$mamehina_dialogue" ] && [ "$mamehina_dialogue" != "null" ]; then
               echo "✅ Text generation successful"
-              echo "🎬 Scene: $scene_description"
               echo "👧 まめひなた: $mamehina_dialogue"
-              echo "🐱 キプフェル: $kipferl_dialogue"
+              echo "🤸 ポーズ: $pose_description"
               success=true
               break
             fi
@@ -131,27 +122,23 @@ jobs:
         echo "✅ Content generation successful"
         
         # アウトプットとして設定
-        echo "scene-description=$scene_description" >> $GITHUB_OUTPUT
         echo "mamehina-dialogue=$mamehina_dialogue" >> $GITHUB_OUTPUT
-        echo "kipferl-dialogue=$kipferl_dialogue" >> $GITHUB_OUTPUT
+        echo "pose-description=$pose_description" >> $GITHUB_OUTPUT
         
         echo "📊 Generated outputs:"
-        echo "  - Scene: $scene_description"
         echo "  - まめひなた: $mamehina_dialogue"
-        echo "  - キプフェル: $kipferl_dialogue"
+        echo "  - ポーズ: $pose_description"
         
     - name: Display Result
       run: |
-        echo "🎬 Generated scene and dialogues:"
-        echo "Scene: ${{ steps.generate.outputs.scene-description }}"
+        echo "🎬 Generated dialogue and pose:"
         echo "まめひなた: ${{ steps.generate.outputs.mamehina-dialogue }}"
-        echo "キプフェル: ${{ steps.generate.outputs.kipferl-dialogue }}"
+        echo "ポーズ: ${{ steps.generate.outputs.pose-description }}"
         
     - name: Save Text as Artifact
       run: |
-        echo "${{ steps.generate.outputs.scene-description }}" > scene-description.txt
         echo "${{ steps.generate.outputs.mamehina-dialogue }}" > mamehina-dialogue.txt
-        echo "${{ steps.generate.outputs.kipferl-dialogue }}" > kipferl-dialogue.txt
+        echo "${{ steps.generate.outputs.pose-description }}" > pose-description.txt
         echo "📄 Saved all text files"
         
     - name: Upload Text Artifact
@@ -159,7 +146,6 @@ jobs:
       with:
         name: morning-content
         path: |
-          scene-description.txt
           mamehina-dialogue.txt
-          kipferl-dialogue.txt
+          pose-description.txt
         retention-days: 1
