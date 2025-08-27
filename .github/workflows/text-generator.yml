@@ -2,6 +2,10 @@ name: Text Generator Module
 
 on:
   workflow_call:
+    outputs:
+      morning-text:
+        description: '生成された朝の挨拶テキスト'
+        value: ${{ jobs.generate-text.outputs.morning-text }}
 
 jobs:
   generate-text:
@@ -135,3 +139,15 @@ jobs:
       run: |
         echo "📝 Generated morning greeting: ${{ steps.generate.outputs.morning-text }}"
         echo "Character count: $(echo -n "${{ steps.generate.outputs.morning-text }}" | wc -m)"
+        
+    - name: Save Text as Artifact
+      run: |
+        echo "${{ steps.generate.outputs.morning-text }}" > morning-text.txt
+        echo "📄 Saved text to morning-text.txt"
+        
+    - name: Upload Text Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: morning-text
+        path: morning-text.txt
+        retention-days: 1

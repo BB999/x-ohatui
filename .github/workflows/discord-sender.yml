@@ -29,13 +29,35 @@ jobs:
   send-to-discord:
     runs-on: ubuntu-latest
     
-    steps:        
-    - name: Send message to Discord
-      if: ${{ inputs.message != '' && !inputs.embed-title && !inputs.file-path }}
+    steps:
+    - name: Debug Inputs
       run: |
-        curl -H "Content-Type: application/json" \
-             -d "{\"content\": \"${{ inputs.message }}\"}" \
-             "${{ secrets.DISCORD_WEBHOOK_URL }}"
+        echo "🔍 Discord Sender Debug:"
+        echo "Message received: '${{ inputs.message }}'"
+        echo "Message is not empty: ${{ inputs.message != '' }}"
+        
+    - name: Send message to Discord
+      if: ${{ inputs.message != '' }}
+      run: |
+        echo "📤 Sending to Discord: '${{ inputs.message }}'"
+        
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          -H "Content-Type: application/json" \
+          -d "{\"content\": \"${{ inputs.message }}\"}" \
+          "${{ secrets.DISCORD_WEBHOOK_URL }}")
+        
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+        
+        echo "HTTP Status: $HTTP_CODE"
+        
+        if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+          echo "✅ Message sent to Discord successfully"
+        else
+          echo "❌ Failed to send message to Discord (HTTP $HTTP_CODE)"
+          echo "Response: $BODY"
+          exit 1
+        fi
         
     - name: Send embed to Discord
       if: ${{ inputs.embed-title != '' && inputs.embed-description != '' }}
