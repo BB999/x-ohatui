@@ -96,8 +96,19 @@ jobs:
         for RETRY_COUNT in {1..3}; do
           echo "🔄 画像生成試行 $RETRY_COUNT/3"
           
-          # 参照画像のURL（まめひなたのみ）
-          REF_IMAGE_1="file:///Users/noranekob/cursor/x-ohatui/images/MAMEHINATA.jpg"
+          # 参照画像をFALにアップロードしてURLを取得
+          echo "📤 参照画像をFALにアップロード中..."
+          python FAL/upload_to_fal_standalone.py "images/MAMEHINATA.jpg"
+          
+          if [ -f fal_upload_results.json ]; then
+            REF_IMAGE_URL=$(jq -r '.url' fal_upload_results.json 2>/dev/null)
+            echo "✅ 参照画像アップロード成功: $REF_IMAGE_URL"
+            REF_IMAGE_1="$REF_IMAGE_URL"
+            rm -f fal_upload_results.json
+          else
+            echo "::error::❌ 参照画像のアップロードに失敗"
+            exit 1
+          fi
           
           # 生成されたポーズ説明をそのまま使用
           POSE_INSTRUCTION="$POSE_DESCRIPTION"
