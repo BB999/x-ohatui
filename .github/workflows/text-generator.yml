@@ -39,8 +39,40 @@ jobs:
           retry_count=$((retry_count + 1))
           echo "🔄 Attempt $retry_count/$max_retries: Generating text with Claude Code SDK..."
           
-          PROMPT="日本語で素敵なおはようの挨拶を1つ作って。20文字以内で、温かみがあって親しみやすい感じで。絵文字は使わないで。
+          # ランダムな要素を生成
+          time_patterns=("朝の光" "新しい一日" "清々しい朝" "爽やかな朝" "素晴らしい朝" "輝く朝")
+          styles=("温かく" "親しみやすく" "優しく" "明るく" "穏やかに" "元気よく")
+          approaches=("季節感を込めて" "希望を込めて" "感謝の気持ちで" "前向きな気持ちで" "心を込めて" "愛情を込めて")
           
+          # ランダムに選択（現在時刻をシード値として使用）
+          seed=$(date +%s%N)
+          time_idx=$((seed % ${#time_patterns[@]}))
+          style_idx=$(((seed / 1000) % ${#styles[@]}))
+          approach_idx=$(((seed / 1000000) % ${#approaches[@]}))
+          
+          selected_time="${time_patterns[$time_idx]}"
+          selected_style="${styles[$style_idx]}"
+          selected_approach="${approaches[$approach_idx]}"
+          
+          echo "🎲 Selected elements: $selected_time, $selected_style, $selected_approach"
+          
+          PROMPT="日本語で素敵なおはようの挨拶を1つ作って。
+
+          条件：
+          - 40文字以内
+          - 絵文字は使わない
+          - 「$selected_time」のイメージを含める
+          - 「$selected_style」表現する
+          - 「$selected_approach」作成する
+          - 毎回異なるオリジナルな表現にする
+          - 一般的すぎる挨拶は避ける
+
+          バリエーション例：
+          - 季節や天候を感じさせる表現
+          - 時間帯の特徴を活かした言葉
+          - 日本語の美しい表現を使った挨拶
+          - 一日の始まりへの期待感を込めた言葉
+
           以下のJSONファイルを morning_text.json として現在のディレクトリに保存してください：
           {\"text\": \"生成したおはよう挨拶テキスト\"}
           
@@ -83,13 +115,13 @@ jobs:
         
         echo "Generated text: $morning_text"
         
-        # 文字数制限チェック（20文字以内）
+        # 文字数制限チェック（40文字以内）
         char_count=$(echo -n "$morning_text" | wc -m)
         echo "Character count: $char_count"
         
-        if [ "$char_count" -gt 20 ]; then
+        if [ "$char_count" -gt 40 ]; then
           echo "⚠️ Text too long ($char_count chars), truncating..."
-          morning_text=$(echo "$morning_text" | cut -c1-20)
+          morning_text=$(echo "$morning_text" | cut -c1-40)
         fi
         
         echo "📝 Final morning greeting: $morning_text"
