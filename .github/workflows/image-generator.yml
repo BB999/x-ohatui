@@ -102,8 +102,8 @@ jobs:
           # 生成されたポーズ説明をそのまま使用
           POSE_INSTRUCTION="$POSE_DESCRIPTION"
           
-          # 画像生成プロンプト（NANO_BANANA_EDIT用）
-          FULL_PROMPT="NANO_BANANA_EDITツールを使って参照画像を大幅に編集してください。参照画像: $REF_IMAGE_1 編集内容: まめひなたが「$MAMEHINA_DIALOGUE」と言いながら、次のポーズをしている画像に変更: $POSE_INSTRUCTION。背景は白色または透明。元の画像とは明らかに違うポーズになるように大幅に編集してください。アスペクト比1:1。morning-image.pngで保存。"
+          # 画像生成プロンプト（NANO_BANANA_EDIT用、短縮版）
+          FULL_PROMPT="NANO_BANANA_EDITで画像編集。参照画像: $REF_IMAGE_1 編集指示: $POSE_INSTRUCTION 背景白色、1:1、morning-image.pngで保存"
           
           echo "🤖 Claude Code SDK実行開始"
           echo "🔍 Pre-generation Debug:"
@@ -359,17 +359,29 @@ jobs:
             if echo "$FILE_TYPE" | grep -qE "(image|PNG|JPEG|WebP|data)" && [ $FILE_SIZE -gt 1000 ]; then
               echo "✅ 有効な画像ファイルと判定"
               
-              # PNGに変換
-              sudo apt-get update && sudo apt-get install -y imagemagick
-              if convert "$DOWNLOADED_FILE" "morning-image.png" 2>/dev/null; then
-                echo "✅ 画像をPNG形式に変換成功"
-                echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
-                echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+              # 元の参照画像と同じかチェック
+              REFERENCE_HASH=$(md5sum "images/MAMEHINATA.jpg" | cut -d' ' -f1)
+              DOWNLOAD_HASH=$(md5sum "$DOWNLOADED_FILE" | cut -d' ' -f1)
+              
+              if [ "$REFERENCE_HASH" = "$DOWNLOAD_HASH" ]; then
+                echo "::error::❌ 生成された画像が参照画像と同一です。画像編集に失敗しました。"
+                rm -f "$DOWNLOADED_FILE"
+                DOWNLOADED_FILE=""
               else
-                echo "::warning::⚠️ ImageMagick変換失敗、元ファイルを使用"
-                cp "$DOWNLOADED_FILE" "morning-image.png"
-                echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
-                echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                echo "✅ 生成された画像は参照画像と異なります（編集成功）"
+                
+                # PNGに変換
+                sudo apt-get update && sudo apt-get install -y imagemagick
+                if convert "$DOWNLOADED_FILE" "morning-image.png" 2>/dev/null; then
+                  echo "✅ 画像をPNG形式に変換成功"
+                  echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                  echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                else
+                  echo "::warning::⚠️ ImageMagick変換失敗、元ファイルを使用"
+                  cp "$DOWNLOADED_FILE" "morning-image.png"
+                  echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                  echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                fi
               fi
             else
               echo "::warning::⚠️ ダウンロードされたファイルが画像ファイルではありません"
