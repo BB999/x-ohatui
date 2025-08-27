@@ -26,6 +26,8 @@ jobs:
     needs: generate-image
     uses: ./.github/workflows/fal-image-upload.yml
     secrets: inherit
+    with:
+      image_path: ${{ needs.generate-image.outputs.image-file }}
     
   post-to-discord:
     needs: [generate-text, generate-image, upload-to-fal]

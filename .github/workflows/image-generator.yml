@@ -103,8 +103,12 @@ jobs:
         for RETRY_COUNT in {1..3}; do
           echo "🔄 画像生成試行 $RETRY_COUNT/3"
           
-          # 画像生成プロンプト（NANO_BANANA_EDIT用、参照画像なし）
-          FULL_PROMPT="NANO_BANANA_EDITツールを使って画像を生成してください。キャラクター: まめひなた(ツインテールの女子高生、制服着用)とキプフェル(三毛猫)。シチュエーション: $SCENE_DESCRIPTION まめひなたの台詞: $MAMEHINA_DIALOGUE キプフェルの台詞: $KIPFERL_DIALOGUE 詳細指示: 台詞の感情に基づいて表情とポーズを決定し、朝の時間帯に適した背景（教室・家・街角・公園など）で2キャラクターの相互作用が見える構図にしてください。朝の光が差し込む明るい雰囲気でバリエーション豊かに。アニメ・マンガ風スタイル。アスペクト比1:1。morning-image.pngとして保存してください。"
+          # 参照画像のURL（まめひなたとキプフェル）
+          REF_IMAGE_1="file:///Users/noranekob/cursor/x-ohatui/images/MAMEHINATA.jpg"
+          REF_IMAGE_2="file:///Users/noranekob/cursor/x-ohatui/images/kpfel.jpg"
+          
+          # 画像生成プロンプト（NANO_BANANA_EDIT用）
+          FULL_PROMPT="NANO_BANANA_EDITツールを使って画像を編集してください。参照画像1: $REF_IMAGE_1 参照画像2: $REF_IMAGE_2 シチュエーション: $SCENE_DESCRIPTION まめひなたの台詞: $MAMEHINA_DIALOGUE キプフェルの台詞: $KIPFERL_DIALOGUE 詳細指示: 台詞の感情に基づいて表情とポーズを変更し、朝の時間帯に適した背景（教室・家・街角・公園など）で2キャラクターの相互作用が見える構図に編集してください。朝の光が差し込む明るい雰囲気でバリエーション豊かに。アスペクト比1:1。morning-image.pngとして保存してください。"
           
           echo "🤖 Claude Code SDK実行開始"
           
