@@ -1,0 +1,46 @@
+name: FAL Image Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_path:
+        description: 'Path to the image file to upload'
+        required: true
+        type: string
+        default: 'images/sample.png'
+  push:
+    paths:
+      - 'images/**'
+      - 'FAL/**'
+
+jobs:
+  upload-to-fal:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install fal_client requests python-dotenv pillow
+        
+    - name: Upload image to FAL
+      env:
+        FAL_KEY: ${{ secrets.FAL_KEY }}
+      run: |
+        python FAL/upload_to_fal_standalone.py "${{ github.event.inputs.image_path || 'images/' }}"
+        
+    - name: Output results
+      run: |
+        echo "Image upload completed"
+        if [ -f fal_upload_results.json ]; then
+          echo "Upload results:"
+          cat fal_upload_results.json
+        fi
