@@ -65,6 +65,8 @@ def upload_image_to_fal(image_path):
         return None
 
 if __name__ == "__main__":
+    import json
+    
     # コマンドライン引数で画像パスを指定
     if len(sys.argv) > 1:
         image_path = sys.argv[1]
@@ -73,6 +75,17 @@ if __name__ == "__main__":
         sys.exit(1)
     
     result_url = upload_image_to_fal(image_path)
+    
+    # 結果をJSONファイルに保存
+    result_data = {
+        "status": "completed" if result_url else "failed",
+        "url": result_url if result_url else "unknown",
+        "image_path": image_path
+    }
+    
+    with open("fal_upload_results.json", "w") as f:
+        json.dump(result_data, f, indent=2)
+    
     if result_url:
         print(f"\n✅ Success: {result_url}")
     else:
