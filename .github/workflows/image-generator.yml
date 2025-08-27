@@ -76,6 +76,7 @@ jobs:
       env:
         CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         NANO_BANANA_EDIT: ${{ secrets.NANO_BANANA_EDIT }}
+        FAL_KEY: ${{ secrets.FAL_KEY }}
       run: |
         # NANO_BANANA_EDIT URLの確認
         if [ -z "$NANO_BANANA_EDIT" ]; then
