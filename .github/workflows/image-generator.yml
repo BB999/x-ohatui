@@ -140,14 +140,15 @@ jobs:
           fi
 
           # 画像生成プロンプト（MCPツール呼び出しを明示）
-          printf -v FULL_PROMPT '%s\n\n%s\n%s\n  "image_url": "%s",\n  "instruction": "%s",\n  "background": "white",\n  "aspect_ratio": "1:1",\n  "output": "morning-image.png"\n%s\n\n%s\n' \
+          printf -v FULL_PROMPT '%s\n\n%s\n%s\n  "image_url": "%s",\n  "instruction": "%s",\n  "background": "white",\n  "aspect_ratio": "1:1",\n  "output": "morning-image.png"\n%s\n\n%s\n\n%s\n' \
             'Please call the MCP tool "nano_banana_edit" with the following exact JSON arguments, then save the resulting image as "morning-image.png" in the current working directory.' \
             'Arguments (JSON):' \
             '{' \
             "$REF_IMAGE_1" \
             "$POSE_INSTRUCTION" \
             '}' \
-            'After the tool finishes, if it returns a request_id or a remote image URL, download the image and write it to a file named exactly "morning-image.png". Do not ask for another URL. Confirm the file exists in the current directory at the end.'
+            'After the tool finishes, if it returns a request_id or a remote image URL, download the image and write it to a file named exactly "morning-image.png". Do not ask for another URL. Confirm the file exists in the current directory at the end.' \
+            'Strict requirement: the background MUST be pure solid white (#FFFFFF) with no patterns, textures, gradients, shadows, props, or scenery. If any background remains, replace it with pure white before saving the final image.'
           
           echo "🤖 Claude Code SDK実行開始"
           echo "🔍 Pre-generation Debug:"
@@ -414,9 +415,9 @@ jobs:
               else
                 echo "✅ 生成された画像は参照画像と異なります（編集成功）"
                 
-                # PNGに変換
+                # PNGに変換しつつ背景を純白でフラット化（透過があれば白で埋める）
                 sudo apt-get update && sudo apt-get install -y imagemagick
-                if convert "$DOWNLOADED_FILE" "morning-image.png" 2>/dev/null; then
+                if convert "$DOWNLOADED_FILE" -background white -alpha remove -alpha off -flatten -strip "morning-image.png" 2>/dev/null; then
                   echo "✅ 画像をPNG形式に変換成功"
                   echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
                   echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
