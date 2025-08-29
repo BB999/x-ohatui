@@ -96,9 +96,9 @@ jobs:
           }
         }' > mcp-config.json
         
-        # 生成されたコンテンツを取得
-        POSE_DESCRIPTION="${{ steps.read-content.outputs.pose }}"
-        MAMEHINA_DIALOGUE="${{ steps.read-content.outputs.mamehina }}"
+        # 生成されたコンテンツを取得（式展開を避けるためファイルから直接読み込み）
+        POSE_DESCRIPTION="$(cat ./content/pose-description.txt)"
+        MAMEHINA_DIALOGUE="$(cat ./content/mamehina-dialogue.txt 2>/dev/null || true)"
         echo "🤸 ポーズ: $POSE_DESCRIPTION"
         echo "👧 まめひなた: $MAMEHINA_DIALOGUE"
         
