@@ -51,18 +51,68 @@ jobs:
           time_patterns=("朝の光" "新しい一日" "清々しい朝" "爽やかな朝" "素晴らしい朝" "輝く朝")
           styles=("温かく" "親しみやすく" "優しく" "明るく" "穏やかに" "元気よく")
           approaches=("季節感を込めて" "希望を込めて" "感謝の気持ちで" "前向きな気持ちで" "心を込めて" "愛情を込めて")
+
+          # （内容2向け）ポーズ記述にランダム性を持たせるための候補
+          pose_archetypes=(
+            "Dynamic, wide-legged power stance"
+            "Graceful contrapposto with weight on one leg"
+            "Exaggerated twist with shoulder-forward, hips-back"
+            "Leaning forward with one hand extended"
+            "Arms crossed dramatically, chin raised"
+            "Knees bent low, hands on hips"
+            "Mid-air jump with tucked knees"
+          )
+          camera_angles=(
+            "low angle (worm's-eye view) to emphasize power"
+            "high angle (bird's-eye view) for dynamism"
+            "three-quarter view from the left"
+            "frontal close-up"
+            "over-the-shoulder from behind"
+          )
+          moods=(
+            "confident and playful"
+            "determined and radiant"
+            "mischievous but charming"
+            "calm yet resolute"
+            "cheerful and energetic"
+          )
+          compositions=(
+            "strong silhouette and S-curve"
+            "diagonal composition with leading lines"
+            "rule-of-thirds emphasis"
+            "asymmetrical balance"
+            "foreground hand foreshortening"
+          )
+          facial_details=(
+            "bright smile, eyes sparkling"
+            "gentle smile, soft eyes"
+            "wide grin, eyebrows raised"
+            "slight smirk, eyes narrowed"
+            "open-mouthed laugh, eyes curved"
+          )
           
-          # ランダムに選択（現在時刻をシード値として使用）
-          seed=$(date +%s%N)
-          time_idx=$((seed % ${#time_patterns[@]}))
-          style_idx=$(((seed / 1000) % ${#styles[@]}))
-          approach_idx=$(((seed / 1000000) % ${#approaches[@]}))
+          # ランダムに選択
+          time_idx=$((RANDOM % ${#time_patterns[@]}))
+          style_idx=$((RANDOM % ${#styles[@]}))
+          approach_idx=$((RANDOM % ${#approaches[@]}))
+
+          pose_idx=$((RANDOM % ${#pose_archetypes[@]}))
+          angle_idx=$((RANDOM % ${#camera_angles[@]}))
+          mood_idx=$((RANDOM % ${#moods[@]}))
+          comp_idx=$((RANDOM % ${#compositions[@]}))
+          face_idx=$((RANDOM % ${#facial_details[@]}))
           
           selected_time="${time_patterns[$time_idx]}"
           selected_style="${styles[$style_idx]}"
           selected_approach="${approaches[$approach_idx]}"
+          selected_pose="${pose_archetypes[$pose_idx]}"
+          selected_angle="${camera_angles[$angle_idx]}"
+          selected_mood="${moods[$mood_idx]}"
+          selected_comp="${compositions[$comp_idx]}"
+          selected_face="${facial_details[$face_idx]}"
           
           echo "🎲 Selected elements: $selected_time, $selected_style, $selected_approach"
+          echo "🎯 Pose constraints: $selected_pose | $selected_angle | $selected_mood | $selected_comp | $selected_face"
           
           PROMPT="まめひなたのセリフと変なポーズの詳細を生成してください。
 
@@ -71,7 +121,12 @@ jobs:
 
           生成する内容：
           1. まめひなたのセリフ（40字程度）- 明るく元気な感じ
-          2. 変なポーズ(ジョジョ立ち)と姿勢と表情の詳細を英語で出力（100-300字程度）
+          2. ポーズと表情の詳細を英語で出力（100-300字程度）。以下の条件を必ず反映すること（英語で統合して自然な文章にする）：
+             - Pose archetype: $selected_pose
+             - Camera angle: $selected_angle
+             - Mood: $selected_mood
+             - Composition: $selected_comp
+             - Facial detail: $selected_face
 
           以下のJSONファイルを morning_text.json として現在のディレクトリに保存してください：
           {
