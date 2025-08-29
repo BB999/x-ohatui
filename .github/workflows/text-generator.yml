@@ -69,13 +69,6 @@ jobs:
             "frontal close-up"
             "over-the-shoulder from behind"
           )
-          moods=(
-            "confident and playful"
-            "determined and radiant"
-            "mischievous but charming"
-            "calm yet resolute"
-            "cheerful and energetic"
-          )
           compositions=(
             "strong silhouette and S-curve"
             "diagonal composition with leading lines"
@@ -83,13 +76,7 @@ jobs:
             "asymmetrical balance"
             "foreground hand foreshortening"
           )
-          facial_details=(
-            "bright smile, eyes sparkling"
-            "gentle smile, soft eyes"
-            "wide grin, eyebrows raised"
-            "slight smirk, eyes narrowed"
-            "open-mouthed laugh, eyes curved"
-          )
+          # 表情とムードはポーズに整合させる（後段のcaseで決定）
           
           # ランダムに選択
           time_idx=$((RANDOM % ${#time_patterns[@]}))
@@ -98,18 +85,50 @@ jobs:
 
           pose_idx=$((RANDOM % ${#pose_archetypes[@]}))
           angle_idx=$((RANDOM % ${#camera_angles[@]}))
-          mood_idx=$((RANDOM % ${#moods[@]}))
           comp_idx=$((RANDOM % ${#compositions[@]}))
-          face_idx=$((RANDOM % ${#facial_details[@]}))
           
           selected_time="${time_patterns[$time_idx]}"
           selected_style="${styles[$style_idx]}"
           selected_approach="${approaches[$approach_idx]}"
           selected_pose="${pose_archetypes[$pose_idx]}"
           selected_angle="${camera_angles[$angle_idx]}"
-          selected_mood="${moods[$mood_idx]}"
           selected_comp="${compositions[$comp_idx]}"
-          selected_face="${facial_details[$face_idx]}"
+
+          # ポーズに基づいて表情とムードを合わせる
+          case "$selected_pose" in
+            "Dynamic, wide-legged power stance")
+              selected_mood="determined and radiant"
+              selected_face="bright smile, eyes sparkling"
+              ;;
+            "Graceful contrapposto with weight on one leg")
+              selected_mood="calm yet resolute"
+              selected_face="gentle smile, soft eyes"
+              ;;
+            "Exaggerated twist with shoulder-forward, hips-back")
+              selected_mood="cheerful and energetic"
+              selected_face="wide grin, eyebrows raised"
+              ;;
+            "Leaning forward with one hand extended")
+              selected_mood="mischievous but charming"
+              selected_face="slight smirk, eyes narrowed"
+              ;;
+            "Arms crossed dramatically, chin raised")
+              selected_mood="determined and radiant"
+              selected_face="slight smirk, eyes narrowed"
+              ;;
+            "Knees bent low, hands on hips")
+              selected_mood="cheerful and energetic"
+              selected_face="bright smile, eyes sparkling"
+              ;;
+            "Mid-air jump with tucked knees")
+              selected_mood="cheerful and energetic"
+              selected_face="open-mouthed laugh, eyes curved"
+              ;;
+            *)
+              selected_mood="confident and playful"
+              selected_face="bright smile, eyes sparkling"
+              ;;
+          esac
           
           echo "🎲 Selected elements: $selected_time, $selected_style, $selected_approach"
           echo "🎯 Pose constraints: $selected_pose | $selected_angle | $selected_mood | $selected_comp | $selected_face"
