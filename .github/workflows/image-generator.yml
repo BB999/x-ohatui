@@ -140,24 +140,14 @@ jobs:
           fi
 
           # 画像生成プロンプト（MCPツール呼び出しを明示）
-          FULL_PROMPT=$(cat << 'PROMPT_EOF'
-Please call the MCP tool "nano_banana_edit" with the following exact JSON arguments, then save the resulting image as "morning-image.png" in the current working directory.
-
-Arguments (JSON):
-{
-  "image_url": "${REF_IMAGE_1}",
-  "instruction": "${POSE_INSTRUCTION}",
-  "background": "white",
-  "aspect_ratio": "1:1",
-  "output": "morning-image.png"
-}
-
-After the tool finishes, if it returns a request_id or a remote image URL, download the image and write it to a file named exactly "morning-image.png". Do not ask for another URL. Confirm the file exists in the current directory at the end.
-PROMPT_EOF
-          )
-          # 変数を展開
-          FULL_PROMPT=${FULL_PROMPT//\$\{REF_IMAGE_1\}/$REF_IMAGE_1}
-          FULL_PROMPT=${FULL_PROMPT//\$\{POSE_INSTRUCTION\}/$POSE_INSTRUCTION}
+          printf -v FULL_PROMPT '%s\n\n%s\n%s\n  "image_url": "%s",\n  "instruction": "%s",\n  "background": "white",\n  "aspect_ratio": "1:1",\n  "output": "morning-image.png"\n%s\n\n%s\n' \
+            'Please call the MCP tool "nano_banana_edit" with the following exact JSON arguments, then save the resulting image as "morning-image.png" in the current working directory.' \
+            'Arguments (JSON):' \
+            '{' \
+            "$REF_IMAGE_1" \
+            "$POSE_INSTRUCTION" \
+            '}' \
+            'After the tool finishes, if it returns a request_id or a remote image URL, download the image and write it to a file named exactly "morning-image.png". Do not ask for another URL. Confirm the file exists in the current directory at the end.'
           
           echo "🤖 Claude Code SDK実行開始"
           echo "🔍 Pre-generation Debug:"
