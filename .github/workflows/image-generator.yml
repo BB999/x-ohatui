@@ -415,36 +415,28 @@ jobs:
               else
                 echo "✅ 生成された画像は参照画像と異なります（編集成功）"
                 
-                # 背景除去（セグメンテーション）→白背景合成→PNG保存（rembg）
-                export INPUT_FILE="$DOWNLOADED_FILE"
-                if python - <<'PY'
-import os, sys
-from PIL import Image
-try:
-    from rembg import remove
-except Exception as e:
-    print("rembg import failed:", e)
-    sys.exit(2)
-
-in_path = os.environ.get('INPUT_FILE')
-if not in_path or not os.path.exists(in_path):
-    print("Input file not found:", in_path)
-    sys.exit(1)
-
-img = Image.open(in_path).convert('RGBA')
-out = remove(img)
-# 白背景に合成
-white = Image.new('RGBA', out.size, (255, 255, 255, 255))
-alpha = out.split()[-1]
-white.paste(out, mask=alpha)
-white = white.convert('RGB')
-white.save('morning-image.png', 'PNG')
-print('✅ Saved morning-image.png after background removal')
-PY
-                then
-                  echo "✅ 背景除去と白背景合成に成功"
-                  echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
-                  echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                # 背景除去（セグメンテーション）→白背景合成→PNG保存（rembg CLI）
+                if rembg i "$DOWNLOADED_FILE" "_tmp_no_bg.png" 2>/dev/null; then
+                  if convert "_tmp_no_bg.png" -background white -alpha remove -alpha off -flatten -strip "morning-image.png" 2>/dev/null; then
+                    rm -f "_tmp_no_bg.png"
+                    echo "✅ 背景除去と白背景合成に成功"
+                    echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                    echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                  else
+                    echo "::warning::ImageMagick白背景合成に失敗。フォールバックを使用"
+                    rm -f "_tmp_no_bg.png" || true
+                    sudo apt-get update && sudo apt-get install -y imagemagick
+                    if convert "$DOWNLOADED_FILE" -background white -alpha remove -alpha off -flatten -strip "morning-image.png" 2>/dev/null; then
+                      echo "✅ 画像をPNG形式に変換成功（フォールバック）"
+                      echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                      echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                    else
+                      echo "::warning::⚠️ ImageMagick変換失敗、元ファイルを使用"
+                      cp "$DOWNLOADED_FILE" "morning-image.png"
+                      echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                      echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
+                    fi
+                  fi
                 else
                   echo "::warning::rembg処理に失敗。ImageMagickで白背景合成にフォールバック"
                   sudo apt-get update && sudo apt-get install -y imagemagick
@@ -458,8 +450,6 @@ PY
                     echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
                     echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
                   fi
-                else
-                  :
                 fi
               fi
             else
