@@ -55,11 +55,13 @@ jobs:
         
     - name: Send message to Discord
       if: ${{ inputs.message != '' }}
+      env:
+        CONTENT: ${{ inputs.message }}
       run: |
         echo "📤 Sending message to Discord..."
         
-        # jqを使って適切なJSONを作成
-        JSON_PAYLOAD=$(jq -n --arg content '${{ inputs.message }}' '{content: $content}')
+        # jqを使って適切なJSONを作成（環境変数経由で安全に受け渡し）
+        JSON_PAYLOAD=$(jq -n --arg content "$CONTENT" '{content: $content}')
         echo "🔍 JSON Payload: $JSON_PAYLOAD"
         
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
