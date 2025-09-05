@@ -417,8 +417,10 @@ jobs:
                 
                 # 画像をそのまま morning-image.png として保存
                 echo "✅ 生成された画像をそのまま使用"
-                cp "$DOWNLOADED_FILE" "morning-image.png"
-                echo "image-url=file://$(pwd)/$DOWNLOADED_FILE" >> $GITHUB_OUTPUT
+                if [ "$DOWNLOADED_FILE" != "morning-image.png" ]; then
+                  cp "$DOWNLOADED_FILE" "morning-image.png"
+                fi
+                echo "image-url=file://$(pwd)/morning-image.png" >> $GITHUB_OUTPUT
                 echo "image-file=morning-image.png" >> $GITHUB_OUTPUT
               fi
             else
