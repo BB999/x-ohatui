@@ -21,10 +21,6 @@ on:
         required: true
         type: string
         default: 'images/test.png'
-  push:
-    paths:
-      - 'images/**'
-      - 'FAL/**'
 
 jobs:
   upload-to-fal:
