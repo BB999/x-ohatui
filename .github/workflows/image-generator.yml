@@ -104,12 +104,12 @@ jobs:
         
         # 参照画像をFALに一度だけアップロードしてURLを取得
         echo "📤 参照画像をFALにアップロード中..."
-        if [ ! -f "images/MAMEHINATA.jpg" ]; then
-          echo "::error::参照画像が見つかりません: images/MAMEHINATA.jpg"
+        if [ ! -f "images/MAMEHINATA.png" ]; then
+          echo "::error::参照画像が見つかりません: images/MAMEHINATA.png"
           ls -la images || true
           exit 1
         fi
-        python FAL/upload_to_fal_standalone.py "images/MAMEHINATA.jpg"
+        python FAL/upload_to_fal_standalone.py "images/MAMEHINATA.png"
         if [ -f fal_upload_results.json ]; then
           REF_IMAGE_URL=$(jq -r '.url' fal_upload_results.json 2>/dev/null)
           echo "✅ 参照画像アップロード成功: $REF_IMAGE_URL"
@@ -405,7 +405,7 @@ jobs:
               echo "✅ 有効な画像ファイルと判定"
               
               # 元の参照画像と同じかチェック
-              REFERENCE_HASH=$(md5sum "images/MAMEHINATA.jpg" | cut -d' ' -f1)
+              REFERENCE_HASH=$(md5sum "images/MAMEHINATA.png" | cut -d' ' -f1)
               DOWNLOAD_HASH=$(md5sum "$DOWNLOADED_FILE" | cut -d' ' -f1)
               
               if [ "$REFERENCE_HASH" = "$DOWNLOAD_HASH" ]; then
